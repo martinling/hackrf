@@ -21,6 +21,7 @@
  */
 
 #include "usb_api_register.h"
+#include "usb_bulk_buffer.h"
 
 #include <hackrf_core.h>
 #include <usb_queue.h>
@@ -159,4 +160,46 @@ usb_request_status_t usb_vendor_request_set_clkout_enable(
 		usb_transfer_schedule_ack(endpoint->in);
 	}
 	return USB_REQUEST_STATUS_OK;
+}
+
+usb_request_status_t usb_vendor_request_get_num_m0_registers(
+	usb_endpoint_t* const endpoint,
+	const usb_transfer_stage_t stage
+) {
+	uint8_t value = sizeof(usb_bulk_buffer_registers) / sizeof(uint32_t);
+	if( stage == USB_TRANSFER_STAGE_SETUP ) 
+	{
+		endpoint->buffer[0] = value;
+		usb_transfer_schedule_block(endpoint->in, &endpoint->buffer, 1,
+					    NULL, NULL);
+		usb_transfer_schedule_ack(endpoint->out);
+		return USB_REQUEST_STATUS_OK;
+	} else {
+		return USB_REQUEST_STATUS_OK;
+	}
+}
+
+usb_request_status_t usb_vendor_request_read_m0(
+	usb_endpoint_t* const endpoint,
+	const usb_transfer_stage_t stage
+) {
+	uint32_t value;
+	if( stage == USB_TRANSFER_STAGE_SETUP ) 
+	{
+		if( endpoint->setup.index < (sizeof(usb_bulk_buffer_registers) / sizeof(uint32_t)) )
+		{
+			value = *(((uint32_t *) &usb_bulk_buffer_registers) + endpoint->setup.index);
+			endpoint->buffer[0] = value & 0xff;
+			endpoint->buffer[1] = (value >> 8) & 0xff;
+			endpoint->buffer[2] = (value >> 16) & 0xff;
+			endpoint->buffer[3] = (value >> 24) & 0xff;
+			usb_transfer_schedule_block(endpoint->in, &endpoint->buffer, 4,
+						    NULL, NULL);
+			usb_transfer_schedule_ack(endpoint->out);
+			return USB_REQUEST_STATUS_OK;
+		}
+		return USB_REQUEST_STATUS_STALL;
+	} else {
+		return USB_REQUEST_STATUS_OK;
+	}
 }

@@ -54,5 +54,13 @@ usb_request_status_t usb_vendor_request_set_clkout_enable(
 	usb_endpoint_t* const endpoint,
 	const usb_transfer_stage_t stage
 );
+usb_request_status_t usb_vendor_request_get_num_m0_registers(
+	usb_endpoint_t* const endpoint,
+	const usb_transfer_stage_t stage
+);
+usb_request_status_t usb_vendor_request_read_m0(
+	usb_endpoint_t* const endpoint,
+	const usb_transfer_stage_t stage
+);
 
 #endif /* end of include guard: __USB_API_REGISTER_H__ */

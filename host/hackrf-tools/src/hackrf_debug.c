@@ -331,11 +331,44 @@ int rffc5072_write_register(
 	return result;
 }
 
+int m0_read_register(hackrf_device* device, const uint16_t register_number) {
+	uint32_t register_value;
+	int result = hackrf_m0_read(device, (uint8_t)register_number, &register_value);
+
+	if( result == HACKRF_SUCCESS ) {
+		printf("[%2d] -> 0x%08x\n", register_number, register_value);
+	} else {
+		printf("hackrf_m0_read() failed: %s (%d)\n", hackrf_error_name(result), result);
+	}
+
+	return result;
+}
+
+int m0_read_registers(hackrf_device* device) {
+	uint8_t num_registers;
+	uint16_t register_number;
+	int result = HACKRF_SUCCESS;
+
+	result = hackrf_m0_get_num_registers(device, &num_registers);
+	if( result != HACKRF_SUCCESS )
+	    return result;
+
+	for(register_number=0; register_number<num_registers; register_number++) {
+		result = m0_read_register(device, register_number);
+		if( result != HACKRF_SUCCESS ) {
+			break;
+		}
+	}
+
+	return result;
+}
+
 enum parts {
 	PART_NONE = 0,
 	PART_MAX2837 = 1,
 	PART_SI5351C = 2,
 	PART_RFFC5072 = 3,
+	PART_M0 = 4,
 };
 
 int read_register(hackrf_device* device, uint8_t part,
@@ -347,6 +380,8 @@ int read_register(hackrf_device* device, uint8_t part,
 			return si5351c_read_register(device, register_number);
 		case PART_RFFC5072:
 			return rffc5072_read_register(device, register_number);
+		case PART_M0:
+			return m0_read_register(device, register_number);
 	}
 	return HACKRF_ERROR_INVALID_PARAM;
 }
@@ -359,6 +394,8 @@ int read_registers(hackrf_device* device, uint8_t part) {
 			return si5351c_read_registers(device);
 		case PART_RFFC5072:
 			return rffc5072_read_registers(device);
+		case PART_M0:
+			return m0_read_registers(device);
 	}
 	return HACKRF_ERROR_INVALID_PARAM;
 }
@@ -388,6 +425,7 @@ static void usage() {
 	printf("\t-m, --max2837: target MAX2837\n");
 	printf("\t-s, --si5351c: target SI5351C\n");
 	printf("\t-f, --rffc5072: target RFFC5072\n");
+	printf("\t-M, --m0: target Cortex-M0\n");
 	printf("\t-u, --ui <1/0>: enable/disable UI\n");
 	printf("\nExamples:\n");
 	printf("\thackrf_debug --si5351c -n 0 -r     # reads from si5351c register 0\n");
@@ -406,6 +444,7 @@ static struct option long_options[] = {
 	{ "max2837", no_argument, 0, 'm' },
 	{ "si5351c", no_argument, 0, 's' },
 	{ "rffc5072", no_argument, 0, 'f' },
+	{ "m0", no_argument, 0, 'M' },
 	{ "ui", required_argument, 0, 'u' },
 	{ 0, 0, 0, 0 },
 };
@@ -430,7 +469,7 @@ int main(int argc, char** argv) {
 		return EXIT_FAILURE;
 	}
 
-	while( (opt = getopt_long(argc, argv, "n:rw:d:cmsfh?u:", long_options, &option_index)) != EOF ) {
+	while( (opt = getopt_long(argc, argv, "n:rw:d:cmsfMh?u:", long_options, &option_index)) != EOF ) {
 		switch( opt ) {
 		case 'n':
 			result = parse_int(optarg, &register_number);
@@ -475,6 +514,14 @@ int main(int argc, char** argv) {
 				return EXIT_FAILURE;
 			}
 			part = PART_RFFC5072;
+			break;
+
+		case 'M':
+			if(part != PART_NONE) {
+				fprintf(stderr, "Only one part can be specified.'\n");
+				return EXIT_FAILURE;
+			}
+			part = PART_M0;
 			break;
 
 		case 'u':

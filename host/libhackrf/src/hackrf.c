@@ -92,6 +92,8 @@ typedef enum {
 	HACKRF_VENDOR_REQUEST_OPERACAKE_SET_MODE = 38,
 	HACKRF_VENDOR_REQUEST_OPERACAKE_GET_MODE = 39,
 	HACKRF_VENDOR_REQUEST_OPERACAKE_SET_DWELL_TIMES = 40,
+	HACKRF_VENDOR_REQUEST_M0_GET_NUM_REGISTERS = 41,
+	HACKRF_VENDOR_REQUEST_M0_READ = 42,
 } hackrf_vendor_request;
 
 #define USB_CONFIG_STANDARD 0x1
@@ -935,6 +937,54 @@ int ADDCALL hackrf_rffc5071_write(hackrf_device* device, uint8_t register_number
 	);
 
 	if( result != 0 )
+	{
+		last_libusb_error = result;
+		return HACKRF_ERROR_LIBUSB;
+	} else {
+		return HACKRF_SUCCESS;
+	}
+}
+
+int ADDCALL hackrf_m0_get_num_registers(hackrf_device* device, uint8_t* value)
+{
+	int result;
+
+	result = libusb_control_transfer(
+		device->usb_device,
+		LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+		HACKRF_VENDOR_REQUEST_M0_GET_NUM_REGISTERS,
+		0,
+		0,
+		(unsigned char*)value,
+		4,
+		0
+	);
+
+	if( result < 1 )
+	{
+		last_libusb_error = result;
+		return HACKRF_ERROR_LIBUSB;
+	} else {
+		return HACKRF_SUCCESS;
+	}
+}
+
+int ADDCALL hackrf_m0_read(hackrf_device* device, uint8_t register_number, uint32_t* value)
+{
+	int result;
+
+	result = libusb_control_transfer(
+		device->usb_device,
+		LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+		HACKRF_VENDOR_REQUEST_M0_READ,
+		0,
+		register_number,
+		(unsigned char*)value,
+		4,
+		0
+	);
+
+	if( result < 4 )
 	{
 		last_libusb_error = result;
 		return HACKRF_ERROR_LIBUSB;
