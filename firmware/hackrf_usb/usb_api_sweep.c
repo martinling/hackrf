@@ -86,6 +86,12 @@ usb_request_status_t usb_vendor_request_init_sweep(
 	return USB_REQUEST_STATUS_OK;
 }
 
+void sweep_bulk_transfer_complete(void *user_data, unsigned int bytes_transferred)
+{
+	(void) user_data;
+	usb_bulk_buffer_registers.m4_count += bytes_transferred;
+}
+
 void sweep_mode(void) {
 	unsigned int blocks_queued = 0;
 	unsigned int phase = 1;
@@ -131,7 +137,7 @@ void sweep_mode(void) {
 					&usb_endpoint_bulk_in,
 					buffer,
 					0x4000,
-					NULL, NULL
+					sweep_bulk_transfer_complete, NULL
 				);
 			}
 			transfer = false;

@@ -25,4 +25,5 @@
 volatile struct usb_bulk_buffer_registers usb_bulk_buffer_registers = {
 	.tx = 0,
 	.m0_count = 0,
+	.m4_count = 0,
 };

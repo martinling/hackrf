@@ -285,6 +285,7 @@ void set_transceiver_mode(const transceiver_mode_t new_transceiver_mode) {
         hw_sync_enable(_hw_sync_mode);
 
 		usb_bulk_buffer_registers.m0_count = 0;
+		usb_bulk_buffer_registers.m4_count = 0;
 	}
 }
 
@@ -323,6 +324,12 @@ usb_request_status_t usb_vendor_request_set_hw_sync_mode(
 	}
 }
 
+void transceiver_bulk_transfer_complete(void *user_data, unsigned int bytes_transferred)
+{
+	(void) user_data;
+	usb_bulk_buffer_registers.m4_count += bytes_transferred;
+}
+
 void rx_mode(void) {
 	unsigned int phase = 1;
 
@@ -336,7 +343,8 @@ void rx_mode(void) {
 				&usb_endpoint_bulk_in,
 				&usb_bulk_buffer[0x0000],
 				0x4000,
-				NULL, NULL
+				transceiver_bulk_transfer_complete,
+				NULL
 				);
 			phase = 0;
 		}
@@ -346,7 +354,8 @@ void rx_mode(void) {
 				&usb_endpoint_bulk_in,
 				&usb_bulk_buffer[0x4000],
 				0x4000,
-				NULL, NULL
+				transceiver_bulk_transfer_complete,
+				NULL
 				);
 			phase = 1;
 		}
@@ -362,9 +371,11 @@ void tx_mode(void) {
 		&usb_endpoint_bulk_out,
 		&usb_bulk_buffer[0x4000],
 		0x4000,
-		NULL, NULL
+		transceiver_bulk_transfer_complete,
+		NULL
 		);
 	// Start transmitting zeros while the host fills buffer 1.
+	usb_bulk_buffer_registers.m4_count = 0x4000;
 	baseband_streaming_enable(&sgpio_config);
 
 	while (TRANSCEIVER_MODE_TX == _transceiver_mode) {
@@ -375,7 +386,8 @@ void tx_mode(void) {
 				&usb_endpoint_bulk_out,
 				&usb_bulk_buffer[0x0000],
 				0x4000,
-				NULL, NULL
+				transceiver_bulk_transfer_complete,
+				NULL
 				);
 			phase = 0;
 		}
@@ -385,7 +397,8 @@ void tx_mode(void) {
 				&usb_endpoint_bulk_out,
 				&usb_bulk_buffer[0x4000],
 				0x4000,
-				NULL, NULL
+				transceiver_bulk_transfer_complete,
+				NULL
 				);
 			phase = 1;
 		}
