@@ -18,6 +18,9 @@
 .equ TARGET_BUFFER_TX,                     0x20007000
 .equ TARGET_BUFFER_M0_COUNT,               0x20007004
 .equ TARGET_BUFFER_M4_COUNT,               0x20007008
+.equ TARGET_BUFFER_TX_MAX_BUF_BYTES,       0x2000700C
+.equ TARGET_BUFFER_TX_MIN_BUF_BYTES,       0x20007010
+
 .equ TARGET_BUFFER_MASK,                   0x7fff
 
 .global main
@@ -73,6 +76,7 @@ direction_tx:
 	ldr r0, =TARGET_BUFFER_M4_COUNT   // r0 = &m4_count
 	ldr r1, [r0]                      // r1 = m4_count
 	sub r1, r3                        // r1 = bytes_available = m4_count - m0_count
+	mov r10, r1                       // r10 = bytes_available
 	cmp r1, #32                       // if bytes_available <= 32:
 	ble tx_zeros                      //     goto tx_zeros
 
@@ -88,6 +92,20 @@ direction_tx:
 	str r0,  [r7, #32]
 	str r1,  [r7, #0]
 
+	// Update max/min levels in buffer stats.
+	ldr r0, =TARGET_BUFFER_TX_MAX_BUF_BYTES	// r0 = &max_bytes
+	ldr r1, =TARGET_BUFFER_TX_MIN_BUF_BYTES // r1 = &min_bytes
+	ldr r2, [r0]				// r2 = max_bytes
+	ldr r3, [r1]				// r3 = min_bytes
+	mov r4, r10				// r4 = bytes_available
+	cmp r4, r2				// if bytes_available <= max_bytes:
+	ble check_min				//	goto check_min
+	str r4, [r0]				// max_bytes = bytes_available
+check_min:
+	cmp r4, r3				// if bytes_available >= min_bytes:
+	bge done				//	goto done
+	str r4, [r1]				// min_bytes = bytes_available
+
 	b done
 
 tx_zeros:
@@ -101,6 +119,9 @@ tx_zeros:
 	str r0,  [r7, #16]
 	str r0,  [r7, #32]
 	str r0,  [r7, #0 ]
+
+	ldr r1, =TARGET_BUFFER_TX_MIN_BUF_BYTES	// r1 = &min_bytes
+	str r0, [r1]				// min_bytes = 0
 
 	b main
 

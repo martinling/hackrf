@@ -1147,13 +1147,15 @@ int main(int argc, char** argv) {
 		}
 
 		if(receive || receive_wav || transmit || signalsource) {
-			uint32_t m0_count, m4_count;
+			uint32_t m0_count, m4_count, tx_max_buf, tx_min_buf;
 			struct {
 				enum m0_register reg;
 				uint32_t *ptr;
 			} reads[] = {
 				{M0_REG_M0_COUNT, &m0_count},
 				{M0_REG_M4_COUNT, &m4_count},
+				{M0_REG_TX_MAX_BUF_BYTES, &tx_max_buf},
+				{M0_REG_TX_MIN_BUF_BYTES, &tx_min_buf},
 			};
 			int num_reads = sizeof(reads) / sizeof(reads[0]);
 			int i;
@@ -1167,6 +1169,9 @@ int main(int argc, char** argv) {
 				"%d bytes %s by M0, %d %s by M4\n",
 				m0_count, (transmit || signalsource) ? "written to SGPIO" : "read from SGPIO",
 				m4_count, (transmit || signalsource) ? "read from host" : "sent to host");
+			if (transmit || signalsource)
+				fprintf(stderr, "TX buffer levels: max %d bytes, min %d bytes\n",
+					tx_max_buf, tx_min_buf);
 		}
 
 		result = hackrf_close(device);

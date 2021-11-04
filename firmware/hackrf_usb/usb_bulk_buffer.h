@@ -36,6 +36,8 @@ struct usb_bulk_buffer_registers {
 	uint32_t tx;
 	uint32_t m0_count;
 	uint32_t m4_count;
+	uint32_t tx_max_buf_bytes;
+	uint32_t tx_min_buf_bytes;
 };
 
 extern volatile struct usb_bulk_buffer_registers usb_bulk_buffer_registers;
