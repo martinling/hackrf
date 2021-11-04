@@ -124,6 +124,12 @@ enum sweep_style {
 	INTERLEAVED = 1,
 };
 
+enum m0_register {
+	M0_REG_MODE = 0,
+	M0_REG_M0_COUNT = 1,
+	M0_REG_M4_COUNT = 2,
+};
+
 typedef struct hackrf_device hackrf_device;
 
 typedef struct {

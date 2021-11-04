@@ -1146,6 +1146,29 @@ int main(int argc, char** argv) {
 			}
 		}
 
+		if(receive || receive_wav || transmit || signalsource) {
+			uint32_t m0_count, m4_count;
+			struct {
+				enum m0_register reg;
+				uint32_t *ptr;
+			} reads[] = {
+				{M0_REG_M0_COUNT, &m0_count},
+				{M0_REG_M4_COUNT, &m4_count},
+			};
+			int num_reads = sizeof(reads) / sizeof(reads[0]);
+			int i;
+			for (i = 0; i < num_reads; i++) {
+				result = hackrf_m0_read(device, reads[i].reg, reads[i].ptr);
+				if(result != HACKRF_SUCCESS)
+					fprintf(stderr, "hackrf_m0_read() failed: %s (%d)\n", hackrf_error_name(result), result);
+			}
+			fprintf(stderr,
+				"Transfer statistics:\n"
+				"%d bytes %s by M0, %d %s by M4\n",
+				m0_count, (transmit || signalsource) ? "written to SGPIO" : "read from SGPIO",
+				m4_count, (transmit || signalsource) ? "read from host" : "sent to host");
+		}
+
 		result = hackrf_close(device);
 		if(result != HACKRF_SUCCESS) {
 			fprintf(stderr, "hackrf_close() failed: %s (%d)\n", hackrf_error_name(result), result);
