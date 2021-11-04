@@ -262,20 +262,20 @@ void set_transceiver_mode(const transceiver_mode_t new_transceiver_mode) {
 		led_off(LED3);
 		led_on(LED2);
 		rf_path_set_direction(&rf_path, RF_PATH_DIRECTION_RX);
-		usb_bulk_buffer_tx = false;
+		usb_bulk_buffer_registers.tx = false;
 		break;
 	case TRANSCEIVER_MODE_TX:
 		led_off(LED2);
 		led_on(LED3);
 		rf_path_set_direction(&rf_path, RF_PATH_DIRECTION_TX);
-		usb_bulk_buffer_tx = true;
+		usb_bulk_buffer_registers.tx = true;
 		break;
 	case TRANSCEIVER_MODE_OFF:
 	default:
 		led_off(LED2);
 		led_off(LED3);
 		rf_path_set_direction(&rf_path, RF_PATH_DIRECTION_OFF);
-		usb_bulk_buffer_tx = false;
+		usb_bulk_buffer_registers.tx = false;
 	}
 
 
@@ -284,7 +284,7 @@ void set_transceiver_mode(const transceiver_mode_t new_transceiver_mode) {
 
         hw_sync_enable(_hw_sync_mode);
 
-		usb_bulk_buffer_offset = 0;
+		usb_bulk_buffer_registers.offset = 0;
 	}
 }
 
@@ -330,7 +330,7 @@ void rx_mode(void) {
 
 	while (TRANSCEIVER_MODE_RX == _transceiver_mode) {
 		// Set up IN transfer of buffer 0.
-		if (16384 <= usb_bulk_buffer_offset && 1 == phase) {
+		if (16384 <= usb_bulk_buffer_registers.offset && 1 == phase) {
 			usb_transfer_schedule_block(
 				&usb_endpoint_bulk_in,
 				&usb_bulk_buffer[0x0000],
@@ -340,7 +340,7 @@ void rx_mode(void) {
 			phase = 0;
 		}
 		// Set up IN transfer of buffer 1.
-		if (16384 > usb_bulk_buffer_offset && 0 == phase) {
+		if (16384 > usb_bulk_buffer_registers.offset && 0 == phase) {
 			usb_transfer_schedule_block(
 				&usb_endpoint_bulk_in,
 				&usb_bulk_buffer[0x4000],
@@ -368,7 +368,7 @@ void tx_mode(void) {
 
 	while (TRANSCEIVER_MODE_TX == _transceiver_mode) {
 		// Set up OUT transfer of buffer 0.
-		if (16384 <= usb_bulk_buffer_offset && 1 == phase) {
+		if (16384 <= usb_bulk_buffer_registers.offset && 1 == phase) {
 			usb_transfer_schedule_block(
 				&usb_endpoint_bulk_out,
 				&usb_bulk_buffer[0x0000],
@@ -378,7 +378,7 @@ void tx_mode(void) {
 			phase = 0;
 		}
 		// Set up OUT transfer of buffer 1.
-		if (16384 > usb_bulk_buffer_offset && 0 == phase) {
+		if (16384 > usb_bulk_buffer_registers.offset && 0 == phase) {
 			usb_transfer_schedule_block(
 				&usb_endpoint_bulk_out,
 				&usb_bulk_buffer[0x4000],

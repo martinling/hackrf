@@ -32,7 +32,12 @@
  */
 extern uint8_t usb_bulk_buffer[32768];
 
-extern volatile uint32_t usb_bulk_buffer_offset;
+struct usb_bulk_buffer_registers {
+	uint32_t offset;
+	uint32_t tx;
+};
+
+extern volatile struct usb_bulk_buffer_registers usb_bulk_buffer_registers;
 
 extern bool usb_bulk_buffer_tx;
 

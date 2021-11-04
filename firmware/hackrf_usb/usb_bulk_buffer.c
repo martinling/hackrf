@@ -22,4 +22,7 @@
 
 #include "usb_bulk_buffer.h"
 
-volatile uint32_t usb_bulk_buffer_offset = 0;
+volatile struct usb_bulk_buffer_registers usb_bulk_buffer_registers = {
+	.offset = 0,
+	.tx = 0,
+};

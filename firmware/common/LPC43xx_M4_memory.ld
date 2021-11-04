@@ -34,6 +34,5 @@ MEMORY
 }
 
 usb_bulk_buffer = ORIGIN(ram_usb);
-usb_bulk_buffer_offset = ORIGIN(ram_shared);
-usb_bulk_buffer_tx = ORIGIN(ram_shared)+4;
+usb_bulk_buffer_registers = ORIGIN(ram_shared);
 PROVIDE(__ram_m0_start__ = ORIGIN(ram_m0));

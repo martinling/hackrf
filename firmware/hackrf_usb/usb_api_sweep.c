@@ -99,7 +99,7 @@ void sweep_mode(void) {
 
 	while (TRANSCEIVER_MODE_RX_SWEEP == transceiver_mode()) {
 		// Set up IN transfer of buffer 0.
-		if ( usb_bulk_buffer_offset >= 16384 && phase == 1) {
+		if ( usb_bulk_buffer_registers.offset >= 16384 && phase == 1) {
 			transfer = true;
 			buffer = &usb_bulk_buffer[0x0000];
 			phase = 0;
@@ -107,7 +107,7 @@ void sweep_mode(void) {
 		}
 
 		// Set up IN transfer of buffer 1.
-		if ( usb_bulk_buffer_offset < 16384 && phase == 0) {
+		if ( usb_bulk_buffer_registers.offset < 16384 && phase == 0) {
 			transfer = true;
 			buffer = &usb_bulk_buffer[0x4000];
 			phase = 1;
