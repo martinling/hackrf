@@ -17,6 +17,7 @@
 .equ TARGET_DATA_BUFFER,                   0x20008000
 .equ TARGET_BUFFER_TX,                     0x20007000
 .equ TARGET_BUFFER_M0_COUNT,               0x20007004
+.equ TARGET_BUFFER_M4_COUNT,               0x20007008
 .equ TARGET_BUFFER_MASK,                   0x7fff
 
 .global main
@@ -68,6 +69,13 @@ main:
 
 direction_tx:
 
+	// Check for TX underrun.
+	ldr r0, =TARGET_BUFFER_M4_COUNT   // r0 = &m4_count
+	ldr r1, [r0]                      // r1 = m4_count
+	sub r1, r3                        // r1 = bytes_available = m4_count - m0_count
+	cmp r1, #32                       // if bytes_available <= 32:
+	ble tx_zeros                      //     goto tx_zeros
+
 	ldm r6!, {r0-r5}
 	str r0,  [r7, #44]
 	str r1,  [r7, #20]
@@ -81,6 +89,20 @@ direction_tx:
 	str r1,  [r7, #0]
 
 	b done
+
+tx_zeros:
+
+	mov r0, #0
+	str r0,  [r7, #44]
+	str r0,  [r7, #20]
+	str r0,  [r7, #40]
+	str r0,  [r7, #8 ]
+	str r0,  [r7, #36]
+	str r0,  [r7, #16]
+	str r0,  [r7, #32]
+	str r0,  [r7, #0 ]
+
+	b main
 
 direction_rx:
 
