@@ -33,8 +33,8 @@
 extern uint8_t usb_bulk_buffer[32768];
 
 struct usb_bulk_buffer_registers {
-	uint32_t offset;
 	uint32_t tx;
+	uint32_t m0_count;
 };
 
 extern volatile struct usb_bulk_buffer_registers usb_bulk_buffer_registers;

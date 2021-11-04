@@ -15,8 +15,8 @@
 
 // Buffer that we're funneling data to/from.
 .equ TARGET_DATA_BUFFER,                   0x20008000
-.equ TARGET_BUFFER_POSITION,               0x20007000
-.equ TARGET_BUFFER_TX,                     0x20007004
+.equ TARGET_BUFFER_TX,                     0x20007000
+.equ TARGET_BUFFER_M0_COUNT,               0x20007004
 .equ TARGET_BUFFER_MASK,                   0x7fff
 
 .global main
@@ -44,11 +44,14 @@ main:
 
 	// ... and grab the address of the buffer segment we want to write to / read from.
 	ldr r0, =TARGET_DATA_BUFFER       // r0 = &buffer
-	ldr r3, =TARGET_BUFFER_POSITION   // r3 = &position_in_buffer
-	ldr r2, [r3]                      // r2 = position_in_buffer
+	ldr r1, =TARGET_BUFFER_M0_COUNT   // r1 = &m0_count
+	ldr r2, =TARGET_BUFFER_MASK       // r2 = mask
+	ldr r3, [r1]                      // r3 = m0_count
+	and r2, r3, r2                    // r2 = position_in_buffer = m0_count & mask
 	add r6, r0, r2                    // r6 = buffer_target = &buffer + position_in_buffer
 
-	mov r8, r3                        // Store &position_in_buffer.
+	mov r8, r1                        // Store &m0_count
+	mov r9, r3                        // Store m0_count
 
 	// Our slice chain is set up as follows (ascending data age; arrows are reversed for flow):
 	//     L  -> F  -> K  -> C -> J  -> E  -> I  -> A
@@ -97,12 +100,10 @@ direction_rx:
 
 done:
 
-	// Finally, update the buffer location...
-	ldr r0, =TARGET_BUFFER_MASK
-	and r0, r6, r0         // r0 = (position_in_buffer + size_copied) % buffer_size
-
-	// ... restore &position_in_buffer, and store the new position there...
-	mov r1, r8
-	str r0, [r1]           // position_in_buffer = (position_in_buffer + size_copied) % buffer_size
+	// Finally, update the count...
+	mov r0, r8             // r0 = &m0_count
+	mov r1, r9             // r1 = m0_count
+	add r1, r1, #32        // r1 = m0_count + size_copied
+	str r1, [r0]           // m0_count = m0_count + size_copied
 
 	b main

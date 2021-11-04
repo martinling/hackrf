@@ -23,6 +23,6 @@
 #include "usb_bulk_buffer.h"
 
 volatile struct usb_bulk_buffer_registers usb_bulk_buffer_registers = {
-	.offset = 0,
 	.tx = 0,
+	.m0_count = 0,
 };
