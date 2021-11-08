@@ -20,6 +20,7 @@
 .equ TARGET_BUFFER_M4_COUNT,               0x20007008
 .equ TARGET_BUFFER_TX_MAX_BUF_BYTES,       0x2000700C
 .equ TARGET_BUFFER_TX_MIN_BUF_BYTES,       0x20007010
+.equ TARGET_BUFFER_TX_NUM_UNDERRUNS,       0x20007014
 
 .equ TARGET_BUFFER_MASK,                   0x7fff
 
@@ -122,6 +123,10 @@ tx_zeros:
 
 	ldr r1, =TARGET_BUFFER_TX_MIN_BUF_BYTES	// r1 = &min_bytes
 	str r0, [r1]				// min_bytes = 0
+	ldr r0, =TARGET_BUFFER_TX_NUM_UNDERRUNS	// r0 = &num_underruns
+	ldr r1, [r0]				// r1 = num_underruns
+	add r1, #1				// r1 = num_underruns + 1
+	str r1, [r0]				// num_underruns = num_underruns + 1
 
 	b main
 
