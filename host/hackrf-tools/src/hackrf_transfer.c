@@ -1097,33 +1097,20 @@ int main(int argc, char** argv) {
 			    double	dB_full_scale_ratio = 10*log10(full_scale_ratio);
 			    if (dB_full_scale_ratio > 1)
 			    	dB_full_scale_ratio = NAN;	// Guard against ridiculous reports
-			    uint32_t m0_count, m4_count, num_shortfalls, longest_shortfall;
-			    struct {
-				    enum m0_register reg;
-				    uint32_t *ptr;
-			    } reads[] = {
-				    {M0_REG_M0_COUNT, &m0_count},
-				    {M0_REG_M4_COUNT, &m4_count},
-				    {M0_REG_NUM_SHORTFALLS, &num_shortfalls},
-				    {M0_REG_LONGEST_SHORTFALL, &longest_shortfall},
-			    };
-			    int num_reads = sizeof(reads) / sizeof(reads[0]);
-			    int i;
-			    for (i = 0; i < num_reads; i++) {
-				    result = hackrf_m0_read(device, reads[i].reg, reads[i].ptr);
-				    if(result != HACKRF_SUCCESS)
-					    fprintf(stderr, "hackrf_m0_read() failed: %s (%d)\n", hackrf_error_name(result), result);
-			    }
+			    hackrf_buffer_stats stats;
+			    result = hackrf_get_buffer_stats(device, &stats);
+			    if(result != HACKRF_SUCCESS)
+				    fprintf(stderr, "hackrf_get_buffer_stats() failed: %s (%d)\n", hackrf_error_name(result), result);
 			    fprintf(stderr, "%4.1f MiB / %5.3f sec = %4.1f MiB/second, amplitude %3.1f dBfs, %d bytes %s in buffer, %d %s, longest %d bytes\n",
 				    (byte_count_now / 1e6f),
 				    time_difference,
 				    (rate / 1e6f),
 				    dB_full_scale_ratio,
-				    (transmit || signalsource) ? m4_count - m0_count : m0_count - m4_count,
+				    (transmit || signalsource) ? stats.m4_count - stats.m0_count : stats.m0_count - stats.m4_count,
 				    (transmit || signalsource) ? "filled" : "free",
-				    num_shortfalls,
+				    stats.num_shortfalls,
 				    (transmit || signalsource) ? "underruns" : "overruns",
-				    longest_shortfall
+				    stats.longest_shortfall
 			    );
 			}
 
@@ -1169,36 +1156,21 @@ int main(int argc, char** argv) {
 		}
 
 		if(receive || receive_wav || transmit || signalsource) {
-			uint32_t m0_count, m4_count, max_margin, min_margin, num_shortfalls, longest_shortfall;
-			struct {
-				enum m0_register reg;
-				uint32_t *ptr;
-			} reads[] = {
-				{M0_REG_M0_COUNT, &m0_count},
-				{M0_REG_M4_COUNT, &m4_count},
-				{M0_REG_MAX_BUF_MARGIN, &max_margin},
-				{M0_REG_MIN_BUF_MARGIN, &min_margin},
-				{M0_REG_NUM_SHORTFALLS, &num_shortfalls},
-				{M0_REG_LONGEST_SHORTFALL, &longest_shortfall},
-			};
-			int num_reads = sizeof(reads) / sizeof(reads[0]);
-			int i;
-			for (i = 0; i < num_reads; i++) {
-				result = hackrf_m0_read(device, reads[i].reg, reads[i].ptr);
-				if(result != HACKRF_SUCCESS)
-					fprintf(stderr, "hackrf_m0_read() failed: %s (%d)\n", hackrf_error_name(result), result);
-			}
+			hackrf_buffer_stats stats;
+			result = hackrf_get_buffer_stats(device, &stats);
+			if (result != HACKRF_SUCCESS)
+			  fprintf(stderr, "hackrf_get_buffer_stast() failed: %s (%d)\n", hackrf_error_name(result), result);
 			fprintf(stderr,
 				"Transfer statistics:\n"
 				"%d bytes %s by M0, %d %s by M4\n",
-				m0_count, (transmit || signalsource) ? "written to SGPIO" : "read from SGPIO",
-				m4_count, (transmit || signalsource) ? "read from host" : "sent to host");
+				stats.m0_count, (transmit || signalsource) ? "written to SGPIO" : "read from SGPIO",
+				stats.m4_count, (transmit || signalsource) ? "read from host" : "sent to host");
 			fprintf(stderr, "Buffer margins: max %d, min %d bytes %s, %d %s, longest %d bytes\n",
-				max_margin, min_margin,
+				stats.max_buf_margin, stats.min_buf_margin,
 				(transmit || signalsource) ? "filled" : "free",
-				num_shortfalls,
+				stats.num_shortfalls,
 				(transmit || signalsource) ? "underruns" : "overruns",
-				longest_shortfall);
+				stats.longest_shortfall);
 		}
 
 		result = hackrf_close(device);

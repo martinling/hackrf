@@ -132,6 +132,7 @@ enum m0_register {
 	M0_REG_MIN_BUF_MARGIN = 4,
 	M0_REG_NUM_SHORTFALLS = 5,
 	M0_REG_LONGEST_SHORTFALL = 6,
+	M0_REG_SHORTFALL_LIMIT = 7,
 };
 
 typedef struct hackrf_device hackrf_device;
@@ -160,6 +161,17 @@ typedef struct {
 	uint16_t freq_max;
 	uint8_t port;
 } hackrf_operacake_freq_range;
+
+typedef struct {
+	uint32_t mode;
+	uint32_t m0_count;
+	uint32_t m4_count;
+	uint32_t max_buf_margin;
+	uint32_t min_buf_margin;
+	uint32_t num_shortfalls;
+	uint32_t longest_shortfall;
+	uint32_t shortfall_limit;
+} hackrf_buffer_stats;
 
 struct hackrf_device_list {
 	char **serial_numbers;
@@ -198,6 +210,8 @@ extern ADDAPI int ADDCALL hackrf_stop_rx(hackrf_device* device);
  
 extern ADDAPI int ADDCALL hackrf_start_tx(hackrf_device* device, hackrf_sample_block_cb_fn callback, void* tx_ctx);
 extern ADDAPI int ADDCALL hackrf_stop_tx(hackrf_device* device);
+
+extern ADDAPI int ADDCALL hackrf_get_buffer_stats(hackrf_device* device, hackrf_buffer_stats* value);
 
 /* return HACKRF_TRUE if success */
 extern ADDAPI int ADDCALL hackrf_is_streaming(hackrf_device* device);

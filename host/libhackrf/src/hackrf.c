@@ -993,6 +993,27 @@ int ADDCALL hackrf_m0_read(hackrf_device* device, uint8_t register_number, uint3
 	}
 }
 
+extern ADDAPI int ADDCALL hackrf_get_buffer_stats(hackrf_device* device, hackrf_buffer_stats* value)
+{
+	int result;
+	uint8_t num_registers;
+	int register_number;
+
+	result = hackrf_m0_get_num_registers(device, &num_registers);
+	if (result != 0)
+		return result;
+
+	for (register_number = 0; register_number < num_registers; register_number++)
+	{
+		result = hackrf_m0_read(device, register_number, ((uint32_t*) value) + register_number);
+		if (result != 0)
+			return result;
+	}
+
+	return HACKRF_SUCCESS;
+}
+
+
 int ADDCALL hackrf_spiflash_erase(hackrf_device* device)
 {
 	int result;
