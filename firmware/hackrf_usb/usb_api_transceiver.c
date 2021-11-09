@@ -366,19 +366,18 @@ void rx_mode(void) {
 }
 
 void tx_mode(void) {
-	unsigned int phase = 1;
+	unsigned int phase = 0;
 
-	memset(&usb_bulk_buffer[0x0000], 0, 0x8000);
-	// Set up OUT transfer of buffer 1.
+	// Set up OUT transfer of buffer 0.
 	usb_transfer_schedule_block(
 		&usb_endpoint_bulk_out,
-		&usb_bulk_buffer[0x4000],
+		&usb_bulk_buffer[0x0000],
 		0x4000,
 		transceiver_bulk_transfer_complete,
 		NULL
 		);
-	// Start transmitting zeros while the host fills buffer 1.
-	usb_bulk_buffer_registers.m4_count = 0x4000;
+
+	// Enable SGPIO streaming. M0 will send zeros until first transfer completes.
 	baseband_streaming_enable(&sgpio_config);
 
 	while (TRANSCEIVER_MODE_TX == _transceiver_mode) {
