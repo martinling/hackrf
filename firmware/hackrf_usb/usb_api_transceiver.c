@@ -286,11 +286,11 @@ void set_transceiver_mode(const transceiver_mode_t new_transceiver_mode) {
 
 		usb_bulk_buffer_registers.m0_count = 0;
 		usb_bulk_buffer_registers.m4_count = 0;
-		usb_bulk_buffer_registers.tx_max_buf_bytes = 0;
-		usb_bulk_buffer_registers.tx_min_buf_bytes = 0x8000;
-		usb_bulk_buffer_registers.tx_num_underruns = 0;
-		usb_bulk_buffer_registers.tx_max_underrun = 0;
-		usb_bulk_buffer_registers.tx_timeout_bytes = 2048;
+		usb_bulk_buffer_registers.max_buf_margin = 0;
+		usb_bulk_buffer_registers.min_buf_margin = 0x8000;
+		usb_bulk_buffer_registers.num_shortfalls = 0;
+		usb_bulk_buffer_registers.longest_shortfall = 0;
+		usb_bulk_buffer_registers.shortfall_limit = 2048;
 	}
 }
 

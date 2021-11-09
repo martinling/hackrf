@@ -43,11 +43,11 @@ struct usb_bulk_buffer_registers {
 	uint32_t mode;
 	uint32_t m0_count;
 	uint32_t m4_count;
-	uint32_t tx_max_buf_bytes;
-	uint32_t tx_min_buf_bytes;
-	uint32_t tx_num_underruns;
-	uint32_t tx_max_underrun;
-	uint32_t tx_timeout_bytes;
+	uint32_t max_buf_margin;
+	uint32_t min_buf_margin;
+	uint32_t num_shortfalls;
+	uint32_t longest_shortfall;
+	uint32_t shortfall_limit;
 };
 
 extern volatile struct usb_bulk_buffer_registers usb_bulk_buffer_registers;
