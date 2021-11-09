@@ -21,6 +21,7 @@
 .equ TARGET_BUFFER_TX_MAX_BUF_BYTES,       0x2000700C
 .equ TARGET_BUFFER_TX_MIN_BUF_BYTES,       0x20007010
 .equ TARGET_BUFFER_TX_NUM_UNDERRUNS,       0x20007014
+.equ TARGET_BUFFER_TX_MAX_UNDERRUN,        0x20007018
 
 .equ TARGET_BUFFER_MASK,                   0x7fff
 
@@ -32,7 +33,10 @@
 .global main
 .thumb_func
 main:
-
+	// Initialise registers used for persistent state.
+	mov r0, #0	// r0 = 0
+	mov r12, r0	// r12 = underrun_length = 0
+loop:
 	// Spin until we're ready to handle an SGPIO packet:
 	// Grab the exchange interrupt staus...
 	ldr r0, =SGPIO_EXCHANGE_INTERRUPT_STATUS_REG
@@ -42,7 +46,7 @@ main:
 	lsr r0, #1
 
 	// ... and if not, jump back to the beginning.
-	bcc main
+	bcc loop
 
 	// Clear the interrupt pending bits for the SGPIO slices we're working with.
 	ldr r0, =SGPIO_EXCHANGE_INTERRUPT_CLEAR_REG
@@ -109,6 +113,10 @@ tx_write:
 	str r0,  [r7, #32]
 	str r1,  [r7, #0]
 
+	// Not in underrun, so zero underrun length.
+	mov r0, #0
+	mov r12, r0
+
 	// Update max/min levels in buffer stats.
 	ldr r0, =TARGET_BUFFER_TX_MAX_BUF_BYTES	// r0 = &max_bytes
 	ldr r1, =TARGET_BUFFER_TX_MIN_BUF_BYTES // r1 = &min_bytes
@@ -139,17 +147,36 @@ tx_zeros:
 
 	// If still in TX start mode, don't count as underrun.
 	cmp r5, #MODE_TX_START
-	beq main
+	beq loop
 
 	// Otherwise, update stats for underrun.
 	ldr r1, =TARGET_BUFFER_TX_MIN_BUF_BYTES	// r1 = &min_bytes
 	str r0, [r1]				// min_bytes = 0
+
+	// Add to the length of the current underrun.
+	mov r0, r12				// r0 = underrun_length
+	add r0, #32				// r0 = underrun_length + 32
+	mov r12, r0				// underrun_length = underrun_length + 32
+
+	// Is the new underrun length the new maximum?
+	ldr r1, =TARGET_BUFFER_TX_MAX_UNDERRUN	// r1 = &max_underrun
+	ldr r2, [r1]				// r2 = max_underrun
+	cmp r0, r2				// if underrun_length <= max_underrun:
+	ble check_length			//	goto check_length
+	str r0, [r1]				// max_underrun = underrun_length
+
+check_length:
+	// If we already in underrun, skip incrementing the count of underruns.
+	cmp r0, #32				// if underrun_length > 32:
+	bgt loop				//	goto loop
+
+	// Otherwise, this is a new underrun.
 	ldr r0, =TARGET_BUFFER_TX_NUM_UNDERRUNS	// r0 = &num_underruns
 	ldr r1, [r0]				// r1 = num_underruns
 	add r1, #1				// r1 = num_underruns + 1
 	str r1, [r0]				// num_underruns = num_underruns + 1
 
-	b main
+	b loop
 
 direction_rx:
 
@@ -175,4 +202,4 @@ done:
 	add r1, r1, #32        // r1 = m0_count + size_copied
 	str r1, [r0]           // m0_count = m0_count + size_copied
 
-	b main
+	b loop

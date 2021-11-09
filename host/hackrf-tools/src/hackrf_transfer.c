@@ -1097,7 +1097,7 @@ int main(int argc, char** argv) {
 			    double	dB_full_scale_ratio = 10*log10(full_scale_ratio);
 			    if (dB_full_scale_ratio > 1)
 			    	dB_full_scale_ratio = NAN;	// Guard against ridiculous reports
-			    uint32_t m0_count, m4_count, num_underruns;
+			    uint32_t m0_count, m4_count, num_underruns, max_underrun;
 			    struct {
 				    enum m0_register reg;
 				    uint32_t *ptr;
@@ -1105,6 +1105,7 @@ int main(int argc, char** argv) {
 				    {M0_REG_M0_COUNT, &m0_count},
 				    {M0_REG_M4_COUNT, &m4_count},
 				    {M0_REG_TX_NUM_UNDERRUNS, &num_underruns},
+				    {M0_REG_TX_MAX_UNDERRUN, &max_underrun},
 			    };
 			    int num_reads = sizeof(reads) / sizeof(reads[0]);
 			    int i;
@@ -1113,13 +1114,14 @@ int main(int argc, char** argv) {
 				    if(result != HACKRF_SUCCESS)
 					    fprintf(stderr, "hackrf_m0_read() failed: %s (%d)\n", hackrf_error_name(result), result);
 			    }
-			    fprintf(stderr, "%4.1f MiB / %5.3f sec = %4.1f MiB/second, amplitude %3.1f dBfs, %d bytes in buffer, %d underruns\n",
+			    fprintf(stderr, "%4.1f MiB / %5.3f sec = %4.1f MiB/second, amplitude %3.1f dBfs, %d bytes in buffer, %d underruns, longest %d bytes\n",
 				    (byte_count_now / 1e6f),
 				    time_difference,
 				    (rate / 1e6f),
 				    dB_full_scale_ratio,
 				    (transmit || signalsource) ? m4_count - m0_count : m0_count - m4_count,
-				    num_underruns
+				    num_underruns,
+				    max_underrun
 			    );
 			}
 
@@ -1165,7 +1167,7 @@ int main(int argc, char** argv) {
 		}
 
 		if(receive || receive_wav || transmit || signalsource) {
-			uint32_t m0_count, m4_count, tx_max_buf, tx_min_buf, num_underruns;
+			uint32_t m0_count, m4_count, tx_max_buf, tx_min_buf, num_underruns, max_underrun;
 			struct {
 				enum m0_register reg;
 				uint32_t *ptr;
@@ -1175,6 +1177,7 @@ int main(int argc, char** argv) {
 				{M0_REG_TX_MAX_BUF_BYTES, &tx_max_buf},
 				{M0_REG_TX_MIN_BUF_BYTES, &tx_min_buf},
 				{M0_REG_TX_NUM_UNDERRUNS, &num_underruns},
+				{M0_REG_TX_MAX_UNDERRUN, &max_underrun},
 			};
 			int num_reads = sizeof(reads) / sizeof(reads[0]);
 			int i;
@@ -1189,8 +1192,8 @@ int main(int argc, char** argv) {
 				m0_count, (transmit || signalsource) ? "written to SGPIO" : "read from SGPIO",
 				m4_count, (transmit || signalsource) ? "read from host" : "sent to host");
 			if (transmit || signalsource)
-				fprintf(stderr, "TX buffer levels: max %d bytes, min %d bytes, %d underruns\n",
-					tx_max_buf, tx_min_buf, num_underruns);
+				fprintf(stderr, "TX buffer levels: max %d bytes, min %d bytes, %d underruns, longest %d bytes\n",
+					tx_max_buf, tx_min_buf, num_underruns, max_underrun);
 		}
 
 		result = hackrf_close(device);

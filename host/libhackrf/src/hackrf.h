@@ -131,6 +131,7 @@ enum m0_register {
 	M0_REG_TX_MAX_BUF_BYTES = 3,
 	M0_REG_TX_MIN_BUF_BYTES = 4,
 	M0_REG_TX_NUM_UNDERRUNS = 5,
+	M0_REG_TX_MAX_UNDERRUN = 6,
 };
 
 typedef struct hackrf_device hackrf_device;
