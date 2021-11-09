@@ -290,6 +290,7 @@ void set_transceiver_mode(const transceiver_mode_t new_transceiver_mode) {
 		usb_bulk_buffer_registers.tx_min_buf_bytes = 0x8000;
 		usb_bulk_buffer_registers.tx_num_underruns = 0;
 		usb_bulk_buffer_registers.tx_max_underrun = 0;
+		usb_bulk_buffer_registers.tx_timeout_bytes = 2048;
 	}
 }
 

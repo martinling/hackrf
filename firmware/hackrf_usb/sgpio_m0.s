@@ -22,6 +22,7 @@
 .equ TARGET_BUFFER_TX_MIN_BUF_BYTES,       0x20007010
 .equ TARGET_BUFFER_TX_NUM_UNDERRUNS,       0x20007014
 .equ TARGET_BUFFER_TX_MAX_UNDERRUN,        0x20007018
+.equ TARGET_BUFFER_TX_TIMEOUT_BYTES,       0x2000701C
 
 .equ TARGET_BUFFER_MASK,                   0x7fff
 
@@ -164,6 +165,14 @@ tx_zeros:
 	cmp r0, r2				// if underrun_length <= max_underrun:
 	ble check_length			//	goto check_length
 	str r0, [r1]				// max_underrun = underrun_length
+
+	// Is the new underrun length enough to trigger a timeout?
+	ldr r1, =TARGET_BUFFER_TX_TIMEOUT_BYTES	// r1 = &timeout_bytes
+	ldr r2, [r1]				// r2 = timeout_bytes
+	cmp r0, r2				// if underrun_length < timeout_bytes:
+	blt check_length			//	goto check_length
+	mov r5, #MODE_IDLE			// r5 = MODE_IDLE
+	str r5, [r4]				// mode = MODE_IDLE
 
 check_length:
 	// If we already in underrun, skip incrementing the count of underruns.

@@ -47,6 +47,7 @@ struct usb_bulk_buffer_registers {
 	uint32_t tx_min_buf_bytes;
 	uint32_t tx_num_underruns;
 	uint32_t tx_max_underrun;
+	uint32_t tx_timeout_bytes;
 };
 
 extern volatile struct usb_bulk_buffer_registers usb_bulk_buffer_registers;
