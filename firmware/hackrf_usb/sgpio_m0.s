@@ -15,7 +15,7 @@
 
 // Buffer that we're funneling data to/from.
 .equ TARGET_DATA_BUFFER,                   0x20008000
-.equ TARGET_BUFFER_TX,                     0x20007000
+.equ TARGET_BUFFER_MODE,                   0x20007000
 .equ TARGET_BUFFER_M0_COUNT,               0x20007004
 .equ TARGET_BUFFER_M4_COUNT,               0x20007008
 .equ TARGET_BUFFER_TX_MAX_BUF_BYTES,       0x2000700C
@@ -23,6 +23,11 @@
 .equ TARGET_BUFFER_TX_NUM_UNDERRUNS,       0x20007014
 
 .equ TARGET_BUFFER_MASK,                   0x7fff
+
+.equ MODE_IDLE,                            0
+.equ MODE_TX_START,                        1
+.equ MODE_TX_RUN,                          2
+.equ MODE_RX,                              3
 
 .global main
 .thumb_func
@@ -63,15 +68,19 @@ main:
 	// Which has equivalent shadow register offsets:
 	//     44 -> 20 -> 40 -> 8 -> 36 -> 16 -> 32 -> 0
 
-	// Load direction (TX or RX)
-	ldr r0, =TARGET_BUFFER_TX
-	ldr r0, [r0]
+	// Load mode
+	ldr r4, =TARGET_BUFFER_MODE	// r4 = &mode
+	ldr r5, [r4]			// r5 = mode
 
-	// TX?
-	lsr r0, #1
-	bcc direction_rx
+	// Idle?
+	cmp r5, #MODE_IDLE		// if mode == IDLE:
+	beq main			//	goto main
 
-direction_tx:
+	// RX?
+	cmp r5, #MODE_RX		// if mode == RX:
+	beq direction_rx		//	goto direction_rx
+
+	// Otherwise in TX start/run.
 
 	// Check for TX underrun.
 	ldr r0, =TARGET_BUFFER_M4_COUNT   // r0 = &m4_count
@@ -81,6 +90,13 @@ direction_tx:
 	cmp r1, #32                       // if bytes_available <= 32:
 	ble tx_zeros                      //     goto tx_zeros
 
+	// If still in TX start mode, switch to TX run.
+	cmp r5, #MODE_TX_RUN		// if mode == TX_RUN:
+	beq tx_write			//	goto tx_write
+	mov r5, #MODE_TX_RUN 		// r5 = MODE_TX_RUN
+	str r5, [r4]			// mode = MODE_TX_RUN
+
+tx_write:
 	ldm r6!, {r0-r5}
 	str r0,  [r7, #44]
 	str r1,  [r7, #20]
@@ -121,6 +137,11 @@ tx_zeros:
 	str r0,  [r7, #32]
 	str r0,  [r7, #0 ]
 
+	// If still in TX start mode, don't count as underrun.
+	cmp r5, #MODE_TX_START
+	beq main
+
+	// Otherwise, update stats for underrun.
 	ldr r1, =TARGET_BUFFER_TX_MIN_BUF_BYTES	// r1 = &min_bytes
 	str r0, [r1]				// min_bytes = 0
 	ldr r0, =TARGET_BUFFER_TX_NUM_UNDERRUNS	// r0 = &num_underruns

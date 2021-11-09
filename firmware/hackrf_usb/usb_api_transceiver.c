@@ -262,20 +262,20 @@ void set_transceiver_mode(const transceiver_mode_t new_transceiver_mode) {
 		led_off(LED3);
 		led_on(LED2);
 		rf_path_set_direction(&rf_path, RF_PATH_DIRECTION_RX);
-		usb_bulk_buffer_registers.tx = false;
+		usb_bulk_buffer_registers.mode = USB_BULK_BUFFER_MODE_RX;
 		break;
 	case TRANSCEIVER_MODE_TX:
 		led_off(LED2);
 		led_on(LED3);
 		rf_path_set_direction(&rf_path, RF_PATH_DIRECTION_TX);
-		usb_bulk_buffer_registers.tx = true;
+		usb_bulk_buffer_registers.mode = USB_BULK_BUFFER_MODE_TX_START;
 		break;
 	case TRANSCEIVER_MODE_OFF:
 	default:
 		led_off(LED2);
 		led_off(LED3);
 		rf_path_set_direction(&rf_path, RF_PATH_DIRECTION_OFF);
-		usb_bulk_buffer_registers.tx = false;
+		usb_bulk_buffer_registers.mode = USB_BULK_BUFFER_MODE_IDLE;
 	}
 
 

@@ -32,8 +32,15 @@
  */
 extern uint8_t usb_bulk_buffer[32768];
 
+enum usb_bulk_buffer_mode {
+	USB_BULK_BUFFER_MODE_IDLE = 0,
+	USB_BULK_BUFFER_MODE_TX_START = 1,
+	USB_BULK_BUFFER_MODE_TX_RUN = 2,
+	USB_BULK_BUFFER_MODE_RX = 3,
+};
+
 struct usb_bulk_buffer_registers {
-	uint32_t tx;
+	uint32_t mode;
 	uint32_t m0_count;
 	uint32_t m4_count;
 	uint32_t tx_max_buf_bytes;
