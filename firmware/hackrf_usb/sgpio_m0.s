@@ -60,10 +60,14 @@
 */
 
 main:												// Cycle counts:
-	// Initialise registers used for fixed addresses.
+	// Initialise low registers used for fixed addresses.
 	ldr r7, =SGPIO_EXCHANGE_INTERRUPT_BASE							// 2
 	ldr r6, =SGPIO_SHADOW_REGISTERS_BASE							// 2
 	ldr r5, =STATS_BASE									// 2
+
+	// Initialise high registers used for constant values.
+	ldr r0, =BUF_SIZE									// 2
+	mov r11, r0										// 1
 idle:
 	// Initialise registers used for persistent state.
 	mov r0, #0	// r0 = 0								// 1
@@ -110,11 +114,10 @@ loop:
 rx:
 	// Check for RX overrun.
 	ldr r0, [r5, #M4_COUNT]		// r0 = m4_count					// 2
-	sub r2, r0			// r2 = bytes_used = m0_count - m4_count		// 1
-	ldr r1, =BUF_SIZE		// r1 = buf_size					// 2
-	sub r1, r2			// r1 = bytes_available = buf_size - bytes_used		// 1
-	mov r9, r1			// r9 = bytes_available					// 1
-	cmp r1, #32			// if bytes_available <= 32:				// 1
+	sub r0, r2			// r0 = -bytes_used = m4_count - m0_count		// 1
+	add r0, r11, r0			// r0 = bytes_available = buf_size + -bytes_used	// 1
+	mov r9, r0			// r9 = bytes_available					// 1
+	cmp r0, #32			// if bytes_available <= 32:				// 1
 	ble shortfall			//     goto shortfall					// 1 thru, 3 taken
 
 	// Read data from SGPIO.
