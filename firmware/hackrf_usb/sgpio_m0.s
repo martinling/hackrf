@@ -121,13 +121,13 @@ loop:
 	ldr r1,  [r7, #20] 									// 10
 	ldr r2,  [r7, #40] 									// 10
 	ldr r3,  [r7, #8 ] 									// 10
-	ldr r4,  [r7, #36] 									// 10
-	ldr r5,  [r7, #16] 									// 10
-	stm r6!, {r0-r5}   									// 7
+	stm r6!, {r0-r3}   									// 5
 
-	ldr r0,  [r7, #32] 									// 10
-	ldr r1,  [r7, #0]  									// 10
-	stm r6!, {r0-r1}									// 3
+	ldr r0,  [r7, #36] 									// 10
+	ldr r1,  [r7, #16] 									// 10
+	ldr r2,  [r7, #32] 									// 10
+	ldr r3,  [r7, #0]  									// 10
+	stm r6!, {r0-r3}									// 5
 
 chunk_successful:
 	// Not in shortfall, so zero shortfall length.
@@ -173,17 +173,17 @@ tx:
 	str r5, [r4]			// mode = MODE_TX_RUN					// 2
 
 tx_write:
-	ldm r6!, {r0-r5}									// 7
+	ldm r6!, {r0-r3}									// 5
 	str r0,  [r7, #44]									// 8
 	str r1,  [r7, #20]									// 8
 	str r2,  [r7, #40]									// 8
 	str r3,  [r7, #8 ]									// 8
-	str r4,  [r7, #36]									// 8
-	str r5,  [r7, #16]									// 8
 
-	ldm r6!, {r0-r1}									// 3
-	str r0,  [r7, #32]									// 8
-	str r1,  [r7, #0]									// 8
+	ldm r6!, {r0-r3}									// 5
+	str r0,  [r7, #36]									// 8
+	str r1,  [r7, #16]									// 8
+	str r2,  [r7, #32]									// 8
+	str r3,  [r7, #0]									// 8
 
 	b chunk_successful									// 3
 
