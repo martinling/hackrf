@@ -28,9 +28,9 @@
 .equ REG_SHORTFALL_LIMIT,                  0x2000701C
 
 .equ MODE_IDLE,                            0
-.equ MODE_TX_START,                        1
-.equ MODE_TX_RUN,                          2
-.equ MODE_RX,                              3
+.equ MODE_RX,                              1
+.equ MODE_TX_START,                        2
+.equ MODE_TX_RUN,                          3
 
 .global main
 .thumb_func
@@ -100,16 +100,64 @@ loop:
 	ldr r4, =REG_MODE		// r4 = &mode						// 2
 	ldr r5, [r4]			// r5 = mode						// 2
 
-	// Idle?
-	cmp r5, #MODE_IDLE		// if mode == IDLE:					// 1
-	beq main			//	goto main					// 1 thru, 3 taken
+	// Branch for idle or TX mode.
+	cmp r5, #MODE_RX		// if mode < RX:					// 1
+	blt main			//	goto main					// 1 thru, 3 taken
+	bgt tx				// else if mode > RX: goto tx				// 1 thru, 3 taken
 
-	// RX?
-	cmp r5, #MODE_RX		// if mode == RX:					// 1
-	beq direction_rx		//	goto direction_rx				// 1 thru, 3 taken
+	// Otherwise, in RX mode.
 
-	// Otherwise in TX start/run.
+	// Check for RX overrun.
+	ldr r0, =REG_M4_COUNT		// r0 = &m4_count					// 2
+	ldr r1, [r0]			// r1 = m4_count					// 2
+	sub r3, r1			// r3 = bytes_used = m0_count - m4_count		// 1
+	ldr r2, =BUF_SIZE		// r2 = buf_size					// 2
+	sub r2, r3			// r2 = bytes_available = buf_size - bytes_used		// 1
+	mov r10, r2			// r10 = bytes_available				// 1
+	cmp r2, #32			// if bytes_available <= 32:				// 1
+	ble shortfall			//     goto shortfall					// 1 thru, 3 taken
 
+	ldr r0,  [r7, #44] 									// 10
+	ldr r1,  [r7, #20] 									// 10
+	ldr r2,  [r7, #40] 									// 10
+	ldr r3,  [r7, #8 ] 									// 10
+	ldr r4,  [r7, #36] 									// 10
+	ldr r5,  [r7, #16] 									// 10
+	stm r6!, {r0-r5}   									// 7
+
+	ldr r0,  [r7, #32] 									// 10
+	ldr r1,  [r7, #0]  									// 10
+	stm r6!, {r0-r1}									// 3
+
+chunk_successful:
+	// Not in shortfall, so zero shortfall length.
+	mov r0, #0										// 1
+	mov r12, r0										// 1
+
+	// Update max/min levels in buffer stats.
+	ldr r0, =REG_MAX_BUF_MARGIN	// r0 = &max_margin					// 2
+	ldr r1, =REG_MIN_BUF_MARGIN	// r1 = &min_margin					// 2
+	ldr r2, [r0]			// r2 = max_margin					// 2
+	ldr r3, [r1]			// r3 = min_margin					// 2
+	mov r4, r10			// r4 = bytes_available					// 1
+	cmp r4, r2			// if bytes_available <= max_margin:			// 1
+	ble check_min			//	goto check_min					// 1 thru, 3 taken
+	str r4, [r0]			// max_margin = bytes_available				// 2
+check_min:
+	cmp r4, r3			// if bytes_available >= min_margin:			// 1
+	bge update_count		//	goto update_count				// 1 thru, 3 taken
+	str r4, [r1]			// min_margin = bytes_available				// 2
+
+update_count:
+	// Finally, update the count...
+	mov r0, r8             // r0 = &m0_count						// 1
+	mov r1, r9             // r1 = m0_count							// 1
+	add r1, r1, #32        // r1 = m0_count + size_copied					// 1
+	str r1, [r0]           // m0_count = m0_count + size_copied				// 2
+
+	b loop											// 3
+
+tx:
 	// Check for TX underrun.
 	ldr r0, =REG_M4_COUNT		// r0 = &m4_count					// 2
 	ldr r1, [r0]			// r1 = m4_count					// 2
@@ -190,56 +238,5 @@ check_length:
 	ldr r1, [r0]				// r1 = num_shortfalls				// 2
 	add r1, #1				// r1 = num_shortfalls + 1			// 1
 	str r1, [r0]				// num_shortfalls = num_shortfalls + 1		// 2
-
-	b loop											// 3
-
-direction_rx:
-	// Check for RX overrun.
-	ldr r0, =REG_M4_COUNT		// r0 = &m4_count					// 2
-	ldr r1, [r0]			// r1 = m4_count					// 2
-	sub r3, r1			// r3 = bytes_used = m0_count - m4_count		// 1
-	ldr r2, =BUF_SIZE		// r2 = buf_size					// 2
-	sub r2, r3			// r2 = bytes_available = buf_size - bytes_used		// 1
-	mov r10, r2			// r10 = bytes_available				// 1
-	cmp r2, #32			// if bytes_available <= 32:				// 1
-	ble shortfall			//     goto shortfall					// 1 thru, 3 taken
-
-	ldr r0,  [r7, #44] 									// 10
-	ldr r1,  [r7, #20] 									// 10
-	ldr r2,  [r7, #40] 									// 10
-	ldr r3,  [r7, #8 ] 									// 10
-	ldr r4,  [r7, #36] 									// 10
-	ldr r5,  [r7, #16] 									// 10
-	stm r6!, {r0-r5}   									// 7
-
-	ldr r0,  [r7, #32] 									// 10
-	ldr r1,  [r7, #0]  									// 10
-	stm r6!, {r0-r1}									// 3
-
-chunk_successful:
-	// Not in shortfall, so zero shortfall length.
-	mov r0, #0										// 1
-	mov r12, r0										// 1
-
-	// Update max/min levels in buffer stats.
-	ldr r0, =REG_MAX_BUF_MARGIN	// r0 = &max_margin					// 2
-	ldr r1, =REG_MIN_BUF_MARGIN	// r1 = &min_margin					// 2
-	ldr r2, [r0]			// r2 = max_margin					// 2
-	ldr r3, [r1]			// r3 = min_margin					// 2
-	mov r4, r10			// r4 = bytes_available					// 1
-	cmp r4, r2			// if bytes_available <= max_margin:			// 1
-	ble check_min			//	goto check_min					// 1 thru, 3 taken
-	str r4, [r0]			// max_margin = bytes_available				// 2
-check_min:
-	cmp r4, r3			// if bytes_available >= min_margin:			// 1
-	bge update_count		//	goto update_count				// 1 thru, 3 taken
-	str r4, [r1]			// min_margin = bytes_available				// 2
-
-update_count:
-	// Finally, update the count...
-	mov r0, r8             // r0 = &m0_count						// 1
-	mov r1, r9             // r1 = m0_count							// 1
-	add r1, r1, #32        // r1 = m0_count + size_copied					// 1
-	str r1, [r0]           // m0_count = m0_count + size_copied				// 2
 
 	b loop											// 3

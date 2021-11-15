@@ -34,9 +34,9 @@ extern uint8_t usb_bulk_buffer[32768];
 
 enum usb_bulk_buffer_mode {
 	USB_BULK_BUFFER_MODE_IDLE = 0,
-	USB_BULK_BUFFER_MODE_TX_START = 1,
-	USB_BULK_BUFFER_MODE_TX_RUN = 2,
-	USB_BULK_BUFFER_MODE_RX = 3,
+	USB_BULK_BUFFER_MODE_RX = 1,
+	USB_BULK_BUFFER_MODE_TX_START = 2,
+	USB_BULK_BUFFER_MODE_TX_RUN = 3,
 };
 
 struct usb_bulk_buffer_registers {
