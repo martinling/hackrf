@@ -8,6 +8,19 @@
 .equ SGPIO_SHADOW_REGISTERS_BASE,          0x40101100
 .equ SGPIO_EXCHANGE_INTERRUPT_BASE,        0x40101F00
 
+// Our slice chain is set up as follows (ascending data age; arrows are reversed for flow):
+//     L  -> F  -> K  -> C -> J  -> E  -> I  -> A
+// Which has equivalent shadow register offsets:
+//     44 -> 20 -> 40 -> 8 -> 36 -> 16 -> 32 -> 0
+.equ SLICE0,                               44
+.equ SLICE1,                               20
+.equ SLICE2,                               40
+.equ SLICE3,                               8
+.equ SLICE4,                               36
+.equ SLICE5,                               16
+.equ SLICE6,                               32
+.equ SLICE7,                               0
+
 // Offsets into the interrupt control registers.
 .equ INT_CLEAR,                            0x30
 .equ INT_STATUS,                           0x2C
@@ -104,11 +117,6 @@ loop:
 
 	mov r8, r2			// r8 = m0_count					// 1	21
 
-	// Our slice chain is set up as follows (ascending data age; arrows are reversed for flow):
-	//     L  -> F  -> K  -> C -> J  -> E  -> I  -> A
-	// Which has equivalent shadow register offsets:
-	//     44 -> 20 -> 40 -> 8 -> 36 -> 16 -> 32 -> 0
-
 	// Load mode
 	ldr r3, [r5, #MODE]		// r3 = mode						// 2	23
 
@@ -129,16 +137,16 @@ rx:
 	ble shortfall			//     goto shortfall					// 1-3	33-35
 
 	// Read data from SGPIO.
-	ldr r0,  [r6, #44] 									// 10	43
-	ldr r1,  [r6, #20] 									// 10	53
-	ldr r2,  [r6, #40] 									// 10	63
-	ldr r3,  [r6, #8 ] 									// 10	73
+	ldr r0,  [r6, #SLICE0] 									// 10	43
+	ldr r1,  [r6, #SLICE1] 									// 10	53
+	ldr r2,  [r6, #SLICE2] 									// 10	63
+	ldr r3,  [r6, #SLICE3] 									// 10	73
 	stm r4!, {r0-r3}   									// 5	78
 
-	ldr r0,  [r6, #36] 									// 10	88
-	ldr r1,  [r6, #16] 									// 10	98
-	ldr r2,  [r6, #32] 									// 10	108
-	ldr r3,  [r6, #0]  									// 10	118
+	ldr r0,  [r6, #SLICE4] 									// 10	88
+	ldr r1,  [r6, #SLICE5] 									// 10	98
+	ldr r2,  [r6, #SLICE6] 									// 10	108
+	ldr r3,  [r6, #SLICE7]  								// 10	118
 	stm r4!, {r0-r3}									// 5	123
 
 chunk_successful:
@@ -182,29 +190,29 @@ tx:
 
 tx_write:
 	ldm r4!, {r0-r3}									// 5	46
-	str r0,  [r6, #44]									// 8	54
-	str r1,  [r6, #20]									// 8	62
-	str r2,  [r6, #40]									// 8	70
-	str r3,  [r6, #8 ]									// 8	78
+	str r0,  [r6, #SLICE0]									// 8	54
+	str r1,  [r6, #SLICE1]									// 8	62
+	str r2,  [r6, #SLICE2]									// 8	70
+	str r3,  [r6, #SLICE3]									// 8	78
 
 	ldm r4!, {r0-r3}									// 5	83
-	str r0,  [r6, #36]									// 8	91
-	str r1,  [r6, #16]									// 8	99
-	str r2,  [r6, #32]									// 8	107
-	str r3,  [r6, #0]									// 8	115
+	str r0,  [r6, #SLICE4]									// 8	91
+	str r1,  [r6, #SLICE5]									// 8	99
+	str r2,  [r6, #SLICE6]									// 8	107
+	str r3,  [r6, #SLICE7]									// 8	115
 
 	b chunk_successful									// 3	118
 
 tx_zeros:
 	mov r0, #0										// 1	37
-	str r0,  [r6, #44]									// 8	45
-	str r0,  [r6, #20]									// 8	53
-	str r0,  [r6, #40]									// 8	61
-	str r0,  [r6, #8 ]									// 8	69
-	str r0,  [r6, #36]									// 8	77
-	str r0,  [r6, #16]									// 8	85
-	str r0,  [r6, #32]									// 8	93
-	str r0,  [r6, #0 ]									// 8	101
+	str r0,  [r6, #SLICE0]									// 8	45
+	str r0,  [r6, #SLICE1]									// 8	53
+	str r0,  [r6, #SLICE2]									// 8	61
+	str r0,  [r6, #SLICE3]									// 8	69
+	str r0,  [r6, #SLICE4]									// 8	77
+	str r0,  [r6, #SLICE5]									// 8	85
+	str r0,  [r6, #SLICE6]									// 8	93
+	str r0,  [r6, #SLICE7]									// 8	101
 
 	// If still in TX start mode, don't count as underrun.
 	cmp r3, #MODE_TX_START									// 1	102
