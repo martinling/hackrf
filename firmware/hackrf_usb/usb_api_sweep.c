@@ -139,7 +139,10 @@ void sweep_mode(void) {
 					0x4000,
 					sweep_bulk_transfer_complete, NULL
 				);
+			} else {
+				usb_bulk_buffer_registers.m4_count += 0x4000;
 			}
+
 			transfer = false;
 		}
 
