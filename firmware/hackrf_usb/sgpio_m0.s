@@ -60,7 +60,7 @@
 */
 
 main:												// Cycle counts:
-	// Initialise low registers used for fixed addresses.
+	// Initialise low registers with addresses that will be used with offsets.
 	ldr r7, =SGPIO_EXCHANGE_INTERRUPT_BASE							// 2
 	ldr r6, =SGPIO_SHADOW_REGISTERS_BASE							// 2
 	ldr r5, =STATS_BASE									// 2
@@ -68,6 +68,8 @@ main:												// Cycle counts:
 	// Initialise high registers used for constant values.
 	ldr r0, =BUF_SIZE									// 2
 	mov r11, r0										// 1
+	ldr r0, =TARGET_DATA_BUFFER								// 2
+	mov r10, r0										// 1
 idle:
 	// Initialise registers used for persistent state.
 	mov r0, #0	// r0 = 0								// 1
@@ -88,11 +90,10 @@ loop:
 	str r0, [r7, #INT_CLEAR]								// 2
 
 	// ... and grab the address of the buffer segment we want to write to / read from.
-	ldr r0, =TARGET_DATA_BUFFER	// r0 = &buffer						// 2
-	ldr r1, =BUF_SIZE_MASK		// r1 = mask						// 2
+	ldr r4, =BUF_SIZE_MASK		// r4 = mask						// 2
 	ldr r2, [r5, #M0_COUNT]		// r2 = m0_count					// 2
-	and r1, r2, r1			// r1 = position_in_buffer = m0_count & mask		// 1
-	add r4, r0, r1			// r4 = buffer_target = &buffer + position_in_buffer	// 1
+	and r4, r2, r4			// r4 = position_in_buffer = m0_count & mask		// 1
+	add r4, r10, r4			// r4 = buffer_target = &buffer + position_in_buffer	// 1
 
 	mov r8, r2			// r8 = m0_count					// 1
 
