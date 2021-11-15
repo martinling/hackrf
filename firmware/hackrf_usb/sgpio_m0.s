@@ -34,6 +34,28 @@
 
 .global main
 .thumb_func
+
+/*
+	This code has tight timing constraints.
+
+	We have to complete a read or write from SGPIO every 163 cycles.
+
+	The CPU clock is 204MHz. We exchange 32 bytes at a time in the SGPIO registers, which
+	is 16 samples worth of IQ data. At the maximum sample rate of 20MHz, the SGPIO update
+	rate is 20 / 16 = 1.25MHz. So we have 204 / 1.25 = 163.2 cycles available.
+
+	Access to the SGPIO peripheral is slow, due to the asynchronous bridge that connects
+	it to the AHB bus matrix. Section 20.4.1 of the LPC43xx user manual (UM10503) specifies
+	the access latencies as:
+
+	Read:  4 x MCLK + 4 x CLK_PERIPH_SGPIO
+	Write: 4 x MCLK + 2 x CLK_PERIPH_SGPIO
+
+	In our case both these clocks are at 204MHz so reads add 8 cycles and writes add 6.
+	These are latencies that add to the usual M0 instruction timings, so an ldr from SGPIO
+	takes 10 cycles, and an str to SGPIO takes 8 cycles.
+*/
+
 main:												// Cycle counts:
 	// Initialise registers used for persistent state.
 	mov r0, #0	// r0 = 0								// 1
@@ -104,30 +126,30 @@ loop:
 
 tx_write:
 	ldm r6!, {r0-r5}									// 7
-	str r0,  [r7, #44]									// 2
-	str r1,  [r7, #20]									// 2
-	str r2,  [r7, #40]									// 2
-	str r3,  [r7, #8 ]									// 2
-	str r4,  [r7, #36]									// 2
-	str r5,  [r7, #16]									// 2
+	str r0,  [r7, #44]									// 8
+	str r1,  [r7, #20]									// 8
+	str r2,  [r7, #40]									// 8
+	str r3,  [r7, #8 ]									// 8
+	str r4,  [r7, #36]									// 8
+	str r5,  [r7, #16]									// 8
 
 	ldm r6!, {r0-r1}									// 3
-	str r0,  [r7, #32]									// 2
-	str r1,  [r7, #0]									// 2
+	str r0,  [r7, #32]									// 8
+	str r1,  [r7, #0]									// 8
 
 	b chunk_successful									// 3
 
 tx_zeros:
 
 	mov r0, #0										// 1
-	str r0,  [r7, #44]									// 2
-	str r0,  [r7, #20]									// 2
-	str r0,  [r7, #40]									// 2
-	str r0,  [r7, #8 ]									// 2
-	str r0,  [r7, #36]									// 2
-	str r0,  [r7, #16]									// 2
-	str r0,  [r7, #32]									// 2
-	str r0,  [r7, #0 ]									// 2
+	str r0,  [r7, #44]									// 8
+	str r0,  [r7, #20]									// 8
+	str r0,  [r7, #40]									// 8
+	str r0,  [r7, #8 ]									// 8
+	str r0,  [r7, #36]									// 8
+	str r0,  [r7, #16]									// 8
+	str r0,  [r7, #32]									// 8
+	str r0,  [r7, #0 ]									// 8
 
 	// If still in TX start mode, don't count as underrun.
 	cmp r5, #MODE_TX_START									// 1
@@ -182,16 +204,16 @@ direction_rx:
 	cmp r2, #32			// if bytes_available <= 32:				// 1
 	ble shortfall			//     goto shortfall					// 1 thru, 3 taken
 
-	ldr r0,  [r7, #44] 									// 2
-	ldr r1,  [r7, #20] 									// 2
-	ldr r2,  [r7, #40] 									// 2
-	ldr r3,  [r7, #8 ] 									// 2
-	ldr r4,  [r7, #36] 									// 2
-	ldr r5,  [r7, #16] 									// 2
+	ldr r0,  [r7, #44] 									// 10
+	ldr r1,  [r7, #20] 									// 10
+	ldr r2,  [r7, #40] 									// 10
+	ldr r3,  [r7, #8 ] 									// 10
+	ldr r4,  [r7, #36] 									// 10
+	ldr r5,  [r7, #16] 									// 10
 	stm r6!, {r0-r5}   									// 7
 
-	ldr r0,  [r7, #32] 									// 2
-	ldr r1,  [r7, #0]  									// 2
+	ldr r0,  [r7, #32] 									// 10
+	ldr r1,  [r7, #0]  									// 10
 	stm r6!, {r0-r1}									// 3
 
 chunk_successful:
