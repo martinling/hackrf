@@ -22,4 +22,4 @@
 
 #include "usb_bulk_buffer.h"
 
-volatile struct usb_bulk_buffer_registers usb_bulk_buffer_registers;
+volatile struct usb_bulk_buffer_stats usb_bulk_buffer_stats;

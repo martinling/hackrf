@@ -124,17 +124,6 @@ enum sweep_style {
 	INTERLEAVED = 1,
 };
 
-enum m0_register {
-	M0_REG_MODE = 0,
-	M0_REG_M0_COUNT = 1,
-	M0_REG_M4_COUNT = 2,
-	M0_REG_MAX_BUF_MARGIN = 3,
-	M0_REG_MIN_BUF_MARGIN = 4,
-	M0_REG_NUM_SHORTFALLS = 5,
-	M0_REG_LONGEST_SHORTFALL = 6,
-	M0_REG_SHORTFALL_LIMIT = 7,
-};
-
 typedef struct hackrf_device hackrf_device;
 
 typedef struct {
@@ -226,9 +215,6 @@ extern ADDAPI int ADDCALL hackrf_set_baseband_filter_bandwidth(hackrf_device* de
  
 extern ADDAPI int ADDCALL hackrf_rffc5071_read(hackrf_device* device, uint8_t register_number, uint16_t* value);
 extern ADDAPI int ADDCALL hackrf_rffc5071_write(hackrf_device* device, uint8_t register_number, uint16_t value);
-
-extern ADDAPI int ADDCALL hackrf_m0_get_num_registers(hackrf_device* device, uint8_t* value);
-extern ADDAPI int ADDCALL hackrf_m0_read(hackrf_device* device, uint8_t register_number, uint32_t* value);
  
 extern ADDAPI int ADDCALL hackrf_spiflash_erase(hackrf_device* device);
 extern ADDAPI int ADDCALL hackrf_spiflash_write(hackrf_device* device, const uint32_t address, const uint16_t length, unsigned char* const data);

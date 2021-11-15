@@ -331,44 +331,11 @@ int rffc5072_write_register(
 	return result;
 }
 
-int m0_read_register(hackrf_device* device, const uint16_t register_number) {
-	uint32_t register_value;
-	int result = hackrf_m0_read(device, (uint8_t)register_number, &register_value);
-
-	if( result == HACKRF_SUCCESS ) {
-		printf("[%2d] -> 0x%08x\n", register_number, register_value);
-	} else {
-		printf("hackrf_m0_read() failed: %s (%d)\n", hackrf_error_name(result), result);
-	}
-
-	return result;
-}
-
-int m0_read_registers(hackrf_device* device) {
-	uint8_t num_registers;
-	uint16_t register_number;
-	int result = HACKRF_SUCCESS;
-
-	result = hackrf_m0_get_num_registers(device, &num_registers);
-	if( result != HACKRF_SUCCESS )
-	    return result;
-
-	for(register_number=0; register_number<num_registers; register_number++) {
-		result = m0_read_register(device, register_number);
-		if( result != HACKRF_SUCCESS ) {
-			break;
-		}
-	}
-
-	return result;
-}
-
 enum parts {
 	PART_NONE = 0,
 	PART_MAX2837 = 1,
 	PART_SI5351C = 2,
 	PART_RFFC5072 = 3,
-	PART_M0 = 4,
 };
 
 int read_register(hackrf_device* device, uint8_t part,
@@ -380,8 +347,6 @@ int read_register(hackrf_device* device, uint8_t part,
 			return si5351c_read_register(device, register_number);
 		case PART_RFFC5072:
 			return rffc5072_read_register(device, register_number);
-		case PART_M0:
-			return m0_read_register(device, register_number);
 	}
 	return HACKRF_ERROR_INVALID_PARAM;
 }
@@ -394,8 +359,6 @@ int read_registers(hackrf_device* device, uint8_t part) {
 			return si5351c_read_registers(device);
 		case PART_RFFC5072:
 			return rffc5072_read_registers(device);
-		case PART_M0:
-			return m0_read_registers(device);
 	}
 	return HACKRF_ERROR_INVALID_PARAM;
 }
@@ -414,6 +377,19 @@ int write_register(hackrf_device* device, uint8_t part,
 	return HACKRF_ERROR_INVALID_PARAM;
 }
 
+static void print_stats(hackrf_buffer_stats *stats) {
+	const char *modes[] = {"IDLE", "RX", "TX_START", "TX_RUN"};
+	printf("Buffer statistics:\n");
+	printf("Mode: %s\n", modes[stats->mode]);
+	printf("M0 count: %d bytes\n", stats->m0_count);
+	printf("M4 count: %d bytes\n", stats->m4_count);
+	printf("Max buffer margin: %d bytes\n", stats->max_buf_margin);
+	printf("Min buffer margin: %d bytes\n", stats->min_buf_margin);
+	printf("Number of shortfalls: %d\n", stats->num_shortfalls);
+	printf("Longest shortfall: %d bytes\n", stats->longest_shortfall);
+	printf("Shortfall limit: %d bytes\n", stats->shortfall_limit);
+}
+
 static void usage() {
 	printf("\nUsage:\n");
 	printf("\t-h, --help: this help\n");
@@ -425,13 +401,14 @@ static void usage() {
 	printf("\t-m, --max2837: target MAX2837\n");
 	printf("\t-s, --si5351c: target SI5351C\n");
 	printf("\t-f, --rffc5072: target RFFC5072\n");
-	printf("\t-M, --m0: target Cortex-M0\n");
+	printf("\t-S, --stats: display buffer statistics\n");
 	printf("\t-u, --ui <1/0>: enable/disable UI\n");
 	printf("\nExamples:\n");
 	printf("\thackrf_debug --si5351c -n 0 -r     # reads from si5351c register 0\n");
 	printf("\thackrf_debug --si5351c -c          # displays si5351c multisynth configuration\n");
 	printf("\thackrf_debug --rffc5072 -r         # reads all rffc5072 registers\n");
 	printf("\thackrf_debug --max2837 -n 10 -w 22 # writes max2837 register 10 with 22 decimal\n");
+	printf("\thackrf_debug --stats               # displays buffer statistics for last transfer\n");
 }
 
 static struct option long_options[] = {
@@ -444,7 +421,7 @@ static struct option long_options[] = {
 	{ "max2837", no_argument, 0, 'm' },
 	{ "si5351c", no_argument, 0, 's' },
 	{ "rffc5072", no_argument, 0, 'f' },
-	{ "m0", no_argument, 0, 'M' },
+	{ "stats", no_argument, 0, 'S' },
 	{ "ui", required_argument, 0, 'u' },
 	{ 0, 0, 0, 0 },
 };
@@ -458,6 +435,7 @@ int main(int argc, char** argv) {
 	bool read = false;
 	bool write = false;
 	bool dump_config = false;
+	bool dump_stats = false;
 	uint8_t part = PART_NONE;
 	const char* serial_number = NULL;
 	bool set_ui = false;
@@ -469,7 +447,7 @@ int main(int argc, char** argv) {
 		return EXIT_FAILURE;
 	}
 
-	while( (opt = getopt_long(argc, argv, "n:rw:d:cmsfMh?u:", long_options, &option_index)) != EOF ) {
+	while( (opt = getopt_long(argc, argv, "n:rw:d:cmsfSh?u:", long_options, &option_index)) != EOF ) {
 		switch( opt ) {
 		case 'n':
 			result = parse_int(optarg, &register_number);
@@ -486,6 +464,10 @@ int main(int argc, char** argv) {
 		
 		case 'c':
 			dump_config = true;
+			break;
+
+		case 'S':
+			dump_stats = true;
 			break;
 
 		case 'd':
@@ -514,14 +496,6 @@ int main(int argc, char** argv) {
 				return EXIT_FAILURE;
 			}
 			part = PART_RFFC5072;
-			break;
-
-		case 'M':
-			if(part != PART_NONE) {
-				fprintf(stderr, "Only one part can be specified.'\n");
-				return EXIT_FAILURE;
-			}
-			part = PART_M0;
 			break;
 
 		case 'u':
@@ -564,13 +538,13 @@ int main(int argc, char** argv) {
 		return EXIT_FAILURE;
 	}
 
-	if(!(write || read || dump_config || set_ui)) {
+	if(!(write || read || dump_config || dump_stats || set_ui)) {
 		fprintf(stderr, "Specify read, write, or config option.\n");
 		usage();
 		return EXIT_FAILURE;
 	}
 
-	if(part == PART_NONE && !set_ui) {
+	if(part == PART_NONE && !set_ui && !dump_stats) {
 		fprintf(stderr, "Specify a part to read, write, or print config from.\n");
 		usage();
 		return EXIT_FAILURE;
@@ -596,6 +570,16 @@ int main(int argc, char** argv) {
 
 	if(dump_config) {
 		si5351c_read_configuration(device);
+	}
+
+	if(dump_stats) {
+		hackrf_buffer_stats stats;
+		result = hackrf_get_buffer_stats(device, &stats);
+		if(result != HACKRF_SUCCESS) {
+			printf("hackrf_read_buffer_stats() failed: %s (%d)\n", hackrf_error_name(result), result);
+			return EXIT_FAILURE;
+		}
+		print_stats(&stats);
 	}
 
 	if(set_ui) {

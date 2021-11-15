@@ -39,7 +39,7 @@ enum usb_bulk_buffer_mode {
 	USB_BULK_BUFFER_MODE_TX_RUN = 3,
 };
 
-struct usb_bulk_buffer_registers {
+struct usb_bulk_buffer_stats {
 	uint32_t mode;
 	uint32_t m0_count;
 	uint32_t m4_count;
@@ -50,7 +50,7 @@ struct usb_bulk_buffer_registers {
 	uint32_t shortfall_limit;
 };
 
-extern volatile struct usb_bulk_buffer_registers usb_bulk_buffer_registers;
+extern volatile struct usb_bulk_buffer_stats usb_bulk_buffer_stats;
 
 extern bool usb_bulk_buffer_tx;
 

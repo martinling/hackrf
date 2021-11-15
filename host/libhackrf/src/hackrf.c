@@ -92,8 +92,7 @@ typedef enum {
 	HACKRF_VENDOR_REQUEST_OPERACAKE_SET_MODE = 38,
 	HACKRF_VENDOR_REQUEST_OPERACAKE_GET_MODE = 39,
 	HACKRF_VENDOR_REQUEST_OPERACAKE_SET_DWELL_TIMES = 40,
-	HACKRF_VENDOR_REQUEST_M0_GET_NUM_REGISTERS = 41,
-	HACKRF_VENDOR_REQUEST_M0_READ = 42,
+	HACKRF_VENDOR_REQUEST_READ_BUFFER_STATS = 41,
 } hackrf_vendor_request;
 
 #define USB_CONFIG_STANDARD 0x1
@@ -945,22 +944,22 @@ int ADDCALL hackrf_rffc5071_write(hackrf_device* device, uint8_t register_number
 	}
 }
 
-int ADDCALL hackrf_m0_get_num_registers(hackrf_device* device, uint8_t* value)
+int ADDCALL hackrf_get_buffer_stats(hackrf_device* device, hackrf_buffer_stats* stats)
 {
 	int result;
 
 	result = libusb_control_transfer(
 		device->usb_device,
 		LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-		HACKRF_VENDOR_REQUEST_M0_GET_NUM_REGISTERS,
+		HACKRF_VENDOR_REQUEST_READ_BUFFER_STATS,
 		0,
 		0,
-		(unsigned char*)value,
-		4,
+		(unsigned char*)stats,
+		sizeof(hackrf_buffer_stats),
 		0
 	);
 
-	if( result < 1 )
+	if( result < sizeof(hackrf_buffer_stats) )
 	{
 		last_libusb_error = result;
 		return HACKRF_ERROR_LIBUSB;
@@ -968,51 +967,6 @@ int ADDCALL hackrf_m0_get_num_registers(hackrf_device* device, uint8_t* value)
 		return HACKRF_SUCCESS;
 	}
 }
-
-int ADDCALL hackrf_m0_read(hackrf_device* device, uint8_t register_number, uint32_t* value)
-{
-	int result;
-
-	result = libusb_control_transfer(
-		device->usb_device,
-		LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-		HACKRF_VENDOR_REQUEST_M0_READ,
-		0,
-		register_number,
-		(unsigned char*)value,
-		4,
-		0
-	);
-
-	if( result < 4 )
-	{
-		last_libusb_error = result;
-		return HACKRF_ERROR_LIBUSB;
-	} else {
-		return HACKRF_SUCCESS;
-	}
-}
-
-extern ADDAPI int ADDCALL hackrf_get_buffer_stats(hackrf_device* device, hackrf_buffer_stats* value)
-{
-	int result;
-	uint8_t num_registers;
-	int register_number;
-
-	result = hackrf_m0_get_num_registers(device, &num_registers);
-	if (result != 0)
-		return result;
-
-	for (register_number = 0; register_number < num_registers; register_number++)
-	{
-		result = hackrf_m0_read(device, register_number, ((uint32_t*) value) + register_number);
-		if (result != 0)
-			return result;
-	}
-
-	return HACKRF_SUCCESS;
-}
-
 
 int ADDCALL hackrf_spiflash_erase(hackrf_device* device)
 {

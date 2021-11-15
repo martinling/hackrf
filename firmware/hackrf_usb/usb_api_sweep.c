@@ -89,7 +89,7 @@ usb_request_status_t usb_vendor_request_init_sweep(
 void sweep_bulk_transfer_complete(void *user_data, unsigned int bytes_transferred)
 {
 	(void) user_data;
-	usb_bulk_buffer_registers.m4_count += bytes_transferred;
+	usb_bulk_buffer_stats.m4_count += bytes_transferred;
 }
 
 void sweep_mode(void) {
@@ -105,7 +105,7 @@ void sweep_mode(void) {
 
 	while (TRANSCEIVER_MODE_RX_SWEEP == transceiver_mode()) {
 		// Set up IN transfer of buffer 0.
-		uint32_t m0_offset = usb_bulk_buffer_registers.m0_count & 0x7fff;
+		uint32_t m0_offset = usb_bulk_buffer_stats.m0_count & 0x7fff;
 		if ( m0_offset >= 16384 && phase == 1) {
 			transfer = true;
 			buffer = &usb_bulk_buffer[0x0000];
@@ -140,7 +140,7 @@ void sweep_mode(void) {
 					sweep_bulk_transfer_complete, NULL
 				);
 			} else {
-				usb_bulk_buffer_registers.m4_count += 0x4000;
+				usb_bulk_buffer_stats.m4_count += 0x4000;
 			}
 
 			transfer = false;
