@@ -946,6 +946,7 @@ int ADDCALL hackrf_rffc5071_write(hackrf_device* device, uint8_t register_number
 
 int ADDCALL hackrf_get_buffer_stats(hackrf_device* device, hackrf_buffer_stats* stats)
 {
+	USB_API_REQUIRED(device, 0x0106)
 	int result;
 
 	result = libusb_control_transfer(
