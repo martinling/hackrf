@@ -52,6 +52,6 @@ struct usb_bulk_buffer_stats {
 
 extern volatile struct usb_bulk_buffer_stats usb_bulk_buffer_stats;
 
-extern bool usb_bulk_buffer_tx;
+void usb_bulk_buffer_init(void);
 
 #endif/*__USB_BULK_BUFFER_H__*/

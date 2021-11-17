@@ -21,5 +21,11 @@
  */
 
 #include "usb_bulk_buffer.h"
+#include <string.h>
 
 volatile struct usb_bulk_buffer_stats usb_bulk_buffer_stats;
+
+void usb_bulk_buffer_init(void)
+{
+	memset((void*) &usb_bulk_buffer_stats, 0, sizeof(usb_bulk_buffer_stats));
+}

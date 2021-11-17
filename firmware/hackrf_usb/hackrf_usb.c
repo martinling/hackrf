@@ -263,6 +263,8 @@ int main(void) {
 	}
 	operacake_init(operacake_allow_gpio);
 
+	usb_bulk_buffer_init();
+
 	while(true) {
 		switch (transceiver_mode()) {
 		case TRANSCEIVER_MODE_RX:
