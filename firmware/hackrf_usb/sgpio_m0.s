@@ -90,9 +90,9 @@
 	There are four code paths through the loop, with the following worst-case timings:
 
 	RX, normal:	145 cycles
-	RX, overrun:	65 cycles
+	RX, overrun:	67 cycles
 	TX, normal:	140 cycles
-	TX, underrun:	131 cycles
+	TX, underrun:	133 cycles
 */
 
 main:												// Cycle counts:
@@ -251,18 +251,20 @@ shortfall:											// 	RX:	TX:
 
 	// Is the new shortfall length enough to trigger a timeout?
 	ldr r2, [r5, #SHORTFALL_LIMIT]		// r1 = shortfall_limit				// 2	49	117
-	cmp r1, r2				// if shortfall_length < shortfall_limit:	// 1	50	118
-	blt check_length			//	goto check_length			// 1-3	51-53	119-121
-	str r0, [r5, #MODE]			// mode = 0 = MODE_IDLE				// 2	53	121
+	cmp r2, #0				// if shortfall_length == 0:			// 1	50	118
+	beq check_length			//	goto check_length			// 1-3	51-53	119-121
+	cmp r1, r2				// if shortfall_length < shortfall_limit:	// 1	52	120
+	blt check_length			//	goto check_length			// 1-3	53-55	121-123
+	str r0, [r5, #MODE]			// mode = 0 = MODE_IDLE				// 2	55	123
 
 check_length:
 	// If we already in shortfall, skip incrementing the count of shortfalls.
-	cmp r1, #32				// if shortfall_length > 32:			// 1	54	122
-	bgt loop				//	goto loop				// 1-3	55-57	123-125
+	cmp r1, #32				// if shortfall_length > 32:			// 1	56	124
+	bgt loop				//	goto loop				// 1-3	57-59	125-127
 
 	// Otherwise, this is a new shortfall.
-	ldr r2, [r5, #NUM_SHORTFALLS]		// r2 = num_shortfalls				// 2	59	125
-	add r2, #1				// r2 = num_shortfalls + 1			// 1	60	126
-	str r2, [r5, #NUM_SHORTFALLS]		// num_shortfalls = num_shortfalls + 1		// 2	62	128
+	ldr r2, [r5, #NUM_SHORTFALLS]		// r2 = num_shortfalls				// 2	61	127
+	add r2, #1				// r2 = num_shortfalls + 1			// 1	62	128
+	str r2, [r5, #NUM_SHORTFALLS]		// num_shortfalls = num_shortfalls + 1		// 2	64	130
 
-	b loop											// 3	65	131
+	b loop											// 3	67	133
