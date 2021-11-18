@@ -332,6 +332,24 @@ usb_request_status_t usb_vendor_request_set_hw_sync_mode(
 	}
 }
 
+usb_request_status_t usb_vendor_request_read_buffer_stats(
+	usb_endpoint_t* const endpoint,
+	const usb_transfer_stage_t stage
+) {
+	if( stage == USB_TRANSFER_STAGE_SETUP )
+	{
+		usb_transfer_schedule_block(
+			endpoint->in,
+			(void*) &usb_bulk_buffer_stats,
+			sizeof(usb_bulk_buffer_stats),
+			NULL, NULL);
+		usb_transfer_schedule_ack(endpoint->out);
+		return USB_REQUEST_STATUS_OK;
+	} else {
+		return USB_REQUEST_STATUS_OK;
+	}
+}
+
 usb_request_status_t usb_vendor_request_set_tx_underrun_limit(
 	usb_endpoint_t* const endpoint,
 	const usb_transfer_stage_t stage

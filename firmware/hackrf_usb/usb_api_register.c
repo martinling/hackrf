@@ -21,7 +21,6 @@
  */
 
 #include "usb_api_register.h"
-#include "usb_bulk_buffer.h"
 
 #include <hackrf_core.h>
 #include <usb_queue.h>
@@ -160,22 +159,4 @@ usb_request_status_t usb_vendor_request_set_clkout_enable(
 		usb_transfer_schedule_ack(endpoint->in);
 	}
 	return USB_REQUEST_STATUS_OK;
-}
-
-usb_request_status_t usb_vendor_request_read_buffer_stats(
-	usb_endpoint_t* const endpoint,
-	const usb_transfer_stage_t stage
-) {
-	if( stage == USB_TRANSFER_STAGE_SETUP ) 
-	{
-		usb_transfer_schedule_block(
-			endpoint->in,
-			(void*) &usb_bulk_buffer_stats,
-			sizeof(usb_bulk_buffer_stats),
-			NULL, NULL);
-		usb_transfer_schedule_ack(endpoint->out);
-		return USB_REQUEST_STATUS_OK;
-	} else {
-		return USB_REQUEST_STATUS_OK;
-	}
 }
