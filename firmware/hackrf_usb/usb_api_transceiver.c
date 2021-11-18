@@ -238,6 +238,8 @@ usb_request_status_t usb_vendor_request_set_freq_explicit(
 
 static volatile transceiver_mode_t _transceiver_mode = TRANSCEIVER_MODE_OFF;
 static volatile hw_sync_mode_t _hw_sync_mode = HW_SYNC_MODE_OFF;
+static volatile uint32_t _tx_underrun_limit;
+static volatile uint32_t _rx_overrun_limit;
 
 void set_hw_sync_mode(const hw_sync_mode_t new_hw_sync_mode) {
 	_hw_sync_mode = new_hw_sync_mode;
@@ -263,12 +265,14 @@ void set_transceiver_mode(const transceiver_mode_t new_transceiver_mode) {
 		led_on(LED2);
 		rf_path_set_direction(&rf_path, RF_PATH_DIRECTION_RX);
 		usb_bulk_buffer_stats.mode = USB_BULK_BUFFER_MODE_RX;
+		usb_bulk_buffer_stats.shortfall_limit = _rx_overrun_limit;
 		break;
 	case TRANSCEIVER_MODE_TX:
 		led_off(LED2);
 		led_on(LED3);
 		rf_path_set_direction(&rf_path, RF_PATH_DIRECTION_TX);
 		usb_bulk_buffer_stats.mode = USB_BULK_BUFFER_MODE_TX_START;
+		usb_bulk_buffer_stats.shortfall_limit = _tx_underrun_limit;
 		break;
 	case TRANSCEIVER_MODE_OFF:
 	default:
@@ -290,7 +294,6 @@ void set_transceiver_mode(const transceiver_mode_t new_transceiver_mode) {
 		usb_bulk_buffer_stats.min_buf_margin = 0x8000;
 		usb_bulk_buffer_stats.num_shortfalls = 0;
 		usb_bulk_buffer_stats.longest_shortfall = 0;
-		usb_bulk_buffer_stats.shortfall_limit = 2048;
 	}
 }
 
@@ -327,6 +330,30 @@ usb_request_status_t usb_vendor_request_set_hw_sync_mode(
 	} else {
 		return USB_REQUEST_STATUS_OK;
 	}
+}
+
+usb_request_status_t usb_vendor_request_set_tx_underrun_limit(
+	usb_endpoint_t* const endpoint,
+	const usb_transfer_stage_t stage
+) {
+	if( stage == USB_TRANSFER_STAGE_SETUP ) {
+		uint32_t value = (endpoint->setup.index << 16) + endpoint->setup.value;
+		_tx_underrun_limit = value;
+		usb_transfer_schedule_ack(endpoint->in);
+	}
+	return USB_REQUEST_STATUS_OK;
+}
+
+usb_request_status_t usb_vendor_request_set_rx_overrun_limit(
+	usb_endpoint_t* const endpoint,
+	const usb_transfer_stage_t stage
+) {
+	if( stage == USB_TRANSFER_STAGE_SETUP ) {
+		uint32_t value = (endpoint->setup.index << 16) + endpoint->setup.value;
+		_rx_overrun_limit = value;
+		usb_transfer_schedule_ack(endpoint->in);
+	}
+	return USB_REQUEST_STATUS_OK;
 }
 
 void transceiver_bulk_transfer_complete(void *user_data, unsigned int bytes_transferred)

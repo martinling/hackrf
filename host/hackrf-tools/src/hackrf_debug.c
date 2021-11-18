@@ -36,7 +36,7 @@ typedef int bool;
 
 #define REGISTER_INVALID 32767
 
-int parse_int(char* s, uint16_t* const value) {
+int parse_int(char* s, uint32_t* const value) {
 	uint_fast8_t base = 10;
 	char* s_end;
 	long long_value;
@@ -56,7 +56,7 @@ int parse_int(char* s, uint16_t* const value) {
 	s_end = s;
 	long_value = strtol(s, &s_end, base);
 	if( (s != s_end) && (*s_end == 0) ) {
-		*value = (uint16_t)long_value;
+		*value = (uint32_t)long_value;
 		return HACKRF_SUCCESS;
 	} else {
 		return HACKRF_ERROR_INVALID_PARAM;
@@ -402,6 +402,8 @@ static void usage() {
 	printf("\t-s, --si5351c: target SI5351C\n");
 	printf("\t-f, --rffc5072: target RFFC5072\n");
 	printf("\t-S, --stats: display buffer statistics\n");
+	printf("\t-T, --tx-underrun-limit <n>: set TX underrun limit in bytes (0 for no limit)\n");
+	printf("\t-R, --rx-overrun-limit <n>: set RX overrun limit in bytes (0 for no limit)\n");
 	printf("\t-u, --ui <1/0>: enable/disable UI\n");
 	printf("\nExamples:\n");
 	printf("\thackrf_debug --si5351c -n 0 -r     # reads from si5351c register 0\n");
@@ -422,14 +424,16 @@ static struct option long_options[] = {
 	{ "si5351c", no_argument, 0, 's' },
 	{ "rffc5072", no_argument, 0, 'f' },
 	{ "stats", no_argument, 0, 'S' },
+	{ "tx-underrun-limit", required_argument, 0, 'T' },
+	{ "rx-overrun-limit", required_argument, 0, 'R' },
 	{ "ui", required_argument, 0, 'u' },
 	{ 0, 0, 0, 0 },
 };
 
 int main(int argc, char** argv) {
 	int opt;
-	uint16_t register_number = REGISTER_INVALID;
-	uint16_t register_value;
+	uint32_t register_number = REGISTER_INVALID;
+	uint32_t register_value;
 	hackrf_device* device = NULL;
 	int option_index = 0;
 	bool read = false;
@@ -439,7 +443,11 @@ int main(int argc, char** argv) {
 	uint8_t part = PART_NONE;
 	const char* serial_number = NULL;
 	bool set_ui = false;
-	uint16_t ui_enable;
+	uint32_t ui_enable;
+	uint32_t tx_limit;
+	uint32_t rx_limit;
+	bool set_tx_limit = false;
+	bool set_rx_limit = false;
 
 	int result = hackrf_init();
 	if(result) {
@@ -447,7 +455,7 @@ int main(int argc, char** argv) {
 		return EXIT_FAILURE;
 	}
 
-	while( (opt = getopt_long(argc, argv, "n:rw:d:cmsfSh?u:", long_options, &option_index)) != EOF ) {
+	while( (opt = getopt_long(argc, argv, "n:rw:d:cmsfST:R:h?u:", long_options, &option_index)) != EOF ) {
 		switch( opt ) {
 		case 'n':
 			result = parse_int(optarg, &register_number);
@@ -468,6 +476,15 @@ int main(int argc, char** argv) {
 
 		case 'S':
 			dump_stats = true;
+			break;
+
+		case 'T':
+			set_tx_limit = true;
+			result = parse_int(optarg, &tx_limit);
+			break;
+		case 'R':
+			set_rx_limit = true;
+			result = parse_int(optarg, &rx_limit);
 			break;
 
 		case 'd':
@@ -538,13 +555,13 @@ int main(int argc, char** argv) {
 		return EXIT_FAILURE;
 	}
 
-	if(!(write || read || dump_config || dump_stats || set_ui)) {
+	if(!(write || read || dump_config || dump_stats || set_tx_limit || set_rx_limit || set_ui)) {
 		fprintf(stderr, "Specify read, write, or config option.\n");
 		usage();
 		return EXIT_FAILURE;
 	}
 
-	if(part == PART_NONE && !set_ui && !dump_stats) {
+	if(part == PART_NONE && !set_ui && !dump_stats && !set_tx_limit && !set_rx_limit) {
 		fprintf(stderr, "Specify a part to read, write, or print config from.\n");
 		usage();
 		return EXIT_FAILURE;
@@ -570,6 +587,22 @@ int main(int argc, char** argv) {
 
 	if(dump_config) {
 		si5351c_read_configuration(device);
+	}
+
+	if (set_tx_limit) {
+		result = hackrf_set_tx_underrun_limit(device, tx_limit);
+		if(result != HACKRF_SUCCESS) {
+			printf("hackrf_set_tx_underrun_limit() failed: %s (%d)\n", hackrf_error_name(result), result);
+			return EXIT_FAILURE;
+		}
+	}
+
+	if (set_rx_limit) {
+		result = hackrf_set_rx_overrun_limit(device, rx_limit);
+		if(result != HACKRF_SUCCESS) {
+			printf("hackrf_set_rx_overrun_limit() failed: %s (%d)\n", hackrf_error_name(result), result);
+			return EXIT_FAILURE;
+		}
 	}
 
 	if(dump_stats) {

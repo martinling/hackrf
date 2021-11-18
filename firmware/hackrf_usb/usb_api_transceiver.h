@@ -55,6 +55,10 @@ usb_request_status_t usb_vendor_request_set_freq_explicit(
 	usb_endpoint_t* const endpoint, const usb_transfer_stage_t stage);
 usb_request_status_t usb_vendor_request_set_hw_sync_mode(
 	usb_endpoint_t* const endpoint,	const usb_transfer_stage_t stage);
+usb_request_status_t usb_vendor_request_set_tx_underrun_limit(
+	usb_endpoint_t* const endpoint, const usb_transfer_stage_t stage);
+usb_request_status_t usb_vendor_request_set_rx_overrun_limit(
+	usb_endpoint_t* const endpoint, const usb_transfer_stage_t stage);
 
 transceiver_mode_t transceiver_mode(void);
 void set_transceiver_mode(const transceiver_mode_t new_transceiver_mode);

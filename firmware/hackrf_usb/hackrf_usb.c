@@ -115,6 +115,8 @@ static usb_request_handler_fn vendor_request_handler[] = {
 	usb_vendor_request_operacake_get_mode,
 	usb_vendor_request_operacake_set_dwell_times,
 	usb_vendor_request_read_buffer_stats,
+	usb_vendor_request_set_tx_underrun_limit,
+	usb_vendor_request_set_rx_overrun_limit,
 };
 
 static const uint32_t vendor_request_handler_count =
