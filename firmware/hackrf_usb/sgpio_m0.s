@@ -244,13 +244,13 @@ shortfall:											// 	RX:	TX:
 	mov r12, r1				// shortfall_length = shortfall_length + 32	// 1	41	109
 
 	// Is the new shortfall length the new maximum?
-	ldr r2, [r5, #LONGEST_SHORTFALL]	// r1 = longest_shortfall			// 2	43	111
+	ldr r2, [r5, #LONGEST_SHORTFALL]	// r2 = longest_shortfall			// 2	43	111
 	cmp r1, r2				// if shortfall_length <= longest_shortfall:	// 1	44	112
 	ble check_length			//	goto check_length			// 1-3	45-47	113-115
 	str r1, [r5, #LONGEST_SHORTFALL]	// longest_shortfall = shortfall_length		// 2	47	115
 
 	// Is the new shortfall length enough to trigger a timeout?
-	ldr r2, [r5, #SHORTFALL_LIMIT]		// r1 = shortfall_limit				// 2	49	117
+	ldr r2, [r5, #SHORTFALL_LIMIT]		// r2 = shortfall_limit				// 2	49	117
 	cmp r2, #0				// if shortfall_length == 0:			// 1	50	118
 	beq check_length			//	goto check_length			// 1-3	51-53	119-121
 	cmp r1, r2				// if shortfall_length < shortfall_limit:	// 1	52	120
@@ -258,7 +258,7 @@ shortfall:											// 	RX:	TX:
 	str r0, [r5, #MODE]			// mode = 0 = MODE_IDLE				// 2	55	123
 
 check_length:
-	// If we already in shortfall, skip incrementing the count of shortfalls.
+	// If we're already in a shortfall, skip incrementing the count of shortfalls.
 	cmp r1, #32				// if shortfall_length > 32:			// 1	56	124
 	bgt loop				//	goto loop				// 1-3	57-59	125-127
 
