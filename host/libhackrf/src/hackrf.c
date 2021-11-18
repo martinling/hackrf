@@ -973,6 +973,7 @@ int ADDCALL hackrf_get_buffer_stats(hackrf_device* device, hackrf_buffer_stats* 
 
 int ADDCALL hackrf_set_tx_underrun_limit(hackrf_device* device, uint32_t value)
 {
+	USB_API_REQUIRED(device, 0x0106)
 	int result;
 
 	result = libusb_control_transfer(
@@ -997,6 +998,7 @@ int ADDCALL hackrf_set_tx_underrun_limit(hackrf_device* device, uint32_t value)
 
 int ADDCALL hackrf_set_rx_overrun_limit(hackrf_device* device, uint32_t value)
 {
+	USB_API_REQUIRED(device, 0x0106)
 	int result;
 
 	result = libusb_control_transfer(
