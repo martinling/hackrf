@@ -151,14 +151,45 @@ typedef struct {
 	uint8_t port;
 } hackrf_operacake_freq_range;
 
+/** Buffer statistics reported by the SGPIO loop on the M0 core.
+ *
+ * The current statistics can be read out using @ref hackrf_get_buffer_stats.
+ *
+ * Values are reset at the start of a new TX or RX operation, so relate to either
+ * a current ongoing operation, or the last one to be completed.
+ *
+ * The meanings differ for TX and RX operations as indicated for each field.
+ * */
 typedef struct {
+	/** Current operating mode of the M0 SGPIO loop. Zero is idle. Other values are
+	 *  subject to change. If this value changes to zero during a TX or RX operation,
+	 *  without a transceiver mode change having been requested, this indicates that
+	 *  the operation was stopped automatically (e.g. due to hitting the TX underrun
+	 *  or RX overrun limits). */
 	uint32_t mode;
+	/** Number of bytes transferred to/from SGPIO by the M0 core. */
 	uint32_t m0_count;
+	/** Number of bytes transferred to/from the sample buffer by the M4 core. */
 	uint32_t m4_count;
+	/** Maximum safety margin in the buffer.
+	 *  For TX, this indicates the maximum number of data bytes in the buffer.
+	 *  For RX, this indicates the maximum number of free bytes in the buffer. */
 	uint32_t max_buf_margin;
+	/** Minimum safety margin in the buffer.
+	 *  For TX, this indicates the minimum number of data bytes in the buffer.
+	 *  For RX, this indicates the minimum number of free bytes in the buffer. */
 	uint32_t min_buf_margin;
+	/** Number of shortfalls.
+	 *  For TX, this counts buffer underruns, during which zeros were substituted.
+	 *  For RX, this counts buffer overruns, during which data was discarded. */
 	uint32_t num_shortfalls;
+	/** Length of the longest shortfall in bytes.
+	 *  For TX, this is the longest chunk of zeroes which had to be substituted.
+	 *  For RX, this is the longest chunk of data which had to be discarded. */
 	uint32_t longest_shortfall;
+	/** Shortfall length at which the operation will be abandoned. This can be
+	 *  configured for TX or RX with the @ref hackrf_set_tx_underrun_limit and
+	 *  @ref hackrf_set_rx_overrun_limit functions. */
 	uint32_t shortfall_limit;
 } hackrf_buffer_stats;
 
