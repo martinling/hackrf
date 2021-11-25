@@ -1113,7 +1113,7 @@ int main(int argc, char** argv) {
 				    hackrf_buffer_stats stats;
 				    result = hackrf_get_buffer_stats(device, &stats);
 				    if (result != HACKRF_SUCCESS)
-					    fprintf(stderr, "hackrf_get_buffer_stats() failed: %s (%d)\n", hackrf_error_name(result), result);
+					    fprintf(stderr, "\nhackrf_get_buffer_stats() failed: %s (%d)\n", hackrf_error_name(result), result);
 				    else
 					    fprintf(stderr, ", %d bytes %s in buffer, %d %s, longest %d bytes\n",
 						    (transmit || signalsource) ? stats.m4_count - stats.m0_count : stats.m0_count - stats.m4_count,
