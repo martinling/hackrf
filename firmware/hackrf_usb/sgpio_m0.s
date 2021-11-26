@@ -106,6 +106,18 @@ main:												// Cycle counts:
 	mov r11, r0										// 1
 	ldr r0, =TARGET_DATA_BUFFER								// 2
 	mov r10, r0										// 1
+
+	// Initialise buffer stats.
+	mov r0, #0										// 1
+	str r0, [r5, #MODE]									// 2
+	str r0, [r5, #M0_COUNT]									// 2
+	str r0, [r5, #M4_COUNT]									// 2
+	str r0, [r5, #MAX_BUF_MARGIN]								// 2
+	str r0, [r5, #MIN_BUF_MARGIN]								// 2
+	str r0, [r5, #NUM_SHORTFALLS]								// 2
+	str r0, [r5, #LONGEST_SHORTFALL]							// 2
+	str r0, [r5, #SHORTFALL_LIMIT]								// 2
+
 idle:
 	// Initialise registers used for persistent state.
 	mov r0, #0	// r0 = 0								// 1
