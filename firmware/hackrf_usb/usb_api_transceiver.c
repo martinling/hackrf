@@ -380,6 +380,13 @@ void transceiver_bulk_transfer_complete(void *user_data, unsigned int bytes_tran
 	usb_bulk_buffer_stats.m4_count += bytes_transferred;
 }
 
+static uint32_t chunk_offsets[] = {
+	0 * USB_BULK_BUFFER_CHUNK_SIZE,
+	2 * USB_BULK_BUFFER_CHUNK_SIZE,
+	1 * USB_BULK_BUFFER_CHUNK_SIZE,
+	3 * USB_BULK_BUFFER_CHUNK_SIZE,
+};
+
 void rx_mode(void) {
 	// Which chunk the M4 last set up to transfer.
 	uint8_t m4_chunk = USB_BULK_BUFFER_NUM_CHUNKS - 1;
@@ -397,7 +404,7 @@ void rx_mode(void) {
 		if (m4_next_chunk != m0_chunk) {
 			usb_transfer_schedule_block(
 				&usb_endpoint_bulk_in,
-				&usb_bulk_buffer[m4_next_chunk * USB_BULK_BUFFER_CHUNK_SIZE],
+				&usb_bulk_buffer[chunk_offsets[m4_next_chunk]],
 				USB_BULK_BUFFER_CHUNK_SIZE,
 				transceiver_bulk_transfer_complete,
 				NULL
@@ -414,7 +421,7 @@ void tx_mode(void) {
 	// Set up OUT transfer of first buffer chunk.
 	usb_transfer_schedule_block(
 		&usb_endpoint_bulk_out,
-		&usb_bulk_buffer[0],
+		&usb_bulk_buffer[chunk_offsets[m4_chunk]],
 		USB_BULK_BUFFER_CHUNK_SIZE,
 		transceiver_bulk_transfer_complete,
 		NULL
@@ -434,7 +441,7 @@ void tx_mode(void) {
 		if (m4_next_chunk != m0_chunk) {
 			usb_transfer_schedule_block(
 				&usb_endpoint_bulk_out,
-				&usb_bulk_buffer[m4_next_chunk * USB_BULK_BUFFER_CHUNK_SIZE],
+				&usb_bulk_buffer[chunk_offsets[m4_next_chunk]],
 				USB_BULK_BUFFER_CHUNK_SIZE,
 				transceiver_bulk_transfer_complete,
 				NULL

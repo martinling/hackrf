@@ -45,6 +45,8 @@
 .equ TARGET_DATA_BUFFER,                   0x20000000
 .equ BUF_SIZE,                             0x10000
 .equ BUF_SIZE_MASK,                        0xffff
+.equ CHUNK_SIZE,                           0x4000
+.equ CHUNK_SIZE_MASK,                      0x3fff
 
 // Base address of the buffer statistics.
 .ifdef RAD10
@@ -67,6 +69,13 @@
 .equ MODE_RX,                              1
 .equ MODE_TX_START,                        2
 .equ MODE_TX_RUN,                          3
+
+.text
+chunk_addresses:
+	.word TARGET_DATA_BUFFER + (0 * CHUNK_SIZE)
+	.word TARGET_DATA_BUFFER + (2 * CHUNK_SIZE)
+	.word TARGET_DATA_BUFFER + (1 * CHUNK_SIZE)
+	.word TARGET_DATA_BUFFER + (3 * CHUNK_SIZE)
 
 .global main
 .thumb_func
@@ -108,7 +117,7 @@ main:												// Cycle counts:
 	// Initialise high registers used for constant values.
 	ldr r0, =BUF_SIZE									// 2
 	mov r11, r0										// 1
-	ldr r0, =TARGET_DATA_BUFFER								// 2
+	ldr r0, =chunk_addresses								// 2
 	mov r10, r0										// 1
 
 	// Initialise buffer stats.
@@ -142,12 +151,18 @@ loop:
 	str r0, [r7, #INT_CLEAR]								// 2	14
 
 	// ... and grab the address of the buffer segment we want to write to / read from.
-	ldr r4, =BUF_SIZE_MASK		// r4 = mask						// 2	16
-	ldr r2, [r5, #M0_COUNT]		// r2 = m0_count					// 2	18
-	and r4, r2, r4			// r4 = position_in_buffer = m0_count & mask		// 1	19
-	add r4, r10, r4			// r4 = buffer_target = &buffer + position_in_buffer	// 1	20
+	ldr r4, =BUF_SIZE_MASK		// r4 = buf_size_mask					// 2	16
+	lsr r3, r4, #2			// r3 = chunk_size_mask = buf_size_mask >> 2		// 1	17
+	ldr r2, [r5, #M0_COUNT]		// r2 = m0_count					// 2	19
+	and r4, r2, r4			// r4 = pos_in_buffer = m0_count & buf_size_mask	// 1	20
+	lsr r0, r4, #14			// r0 = chunk_index = pos_in_buffer >> 14		// 1	21
+	lsl r0, #2			// r0 = chunk_index * sizeof(ptr) = chunk_index << 2	// 1	22
+	mov r1, r10			// r1 = &chunk_addresses				// 1	23
+	ldr r0, [r1, r0]		// r0 = chunk_address = chunk_addresses[chunk_index]	// 2	25
+	and r4, r4, r3			// r4 = pos_in_chunk = pos_in_buffer & chunk_size_mask	// 1	26
+	add r4, r0, r4			// r4 = buffer_target = chunk_address + pos_in_chunk	// 1	27
 
-	mov r8, r2			// r8 = m0_count					// 1	21
+	mov r8, r2			// r8 = m0_count					// 1	28
 
 	// Load mode
 	ldr r3, [r5, #MODE]		// r3 = mode						// 2	23
