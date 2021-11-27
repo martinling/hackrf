@@ -47,7 +47,11 @@
 .equ BUF_SIZE_MASK,                        0x7fff
 
 // Base address of the buffer statistics.
-.equ STATS_BASE,                           0x20007000
+.ifdef RAD10
+.equ STATS_BASE,                           0x10091C00
+.else
+.equ STATS_BASE,                           0x10089C00
+.endif
 
 // Offsets into the buffer statistics.
 .equ MODE,                                 0x00

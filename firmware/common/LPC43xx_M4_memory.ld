@@ -34,5 +34,5 @@ MEMORY
 }
 
 usb_bulk_buffer = ORIGIN(ram_usb);
-usb_bulk_buffer_stats = ORIGIN(ram_shared);
+usb_bulk_buffer_stats = ORIGIN(ram_sleep) + 7K;
 PROVIDE(__ram_m0_start__ = ORIGIN(ram_m0));
