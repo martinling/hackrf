@@ -291,7 +291,7 @@ void set_transceiver_mode(const transceiver_mode_t new_transceiver_mode) {
 		usb_bulk_buffer_stats.m0_count = 0;
 		usb_bulk_buffer_stats.m4_count = 0;
 		usb_bulk_buffer_stats.max_buf_margin = 0;
-		usb_bulk_buffer_stats.min_buf_margin = 0x8000;
+		usb_bulk_buffer_stats.min_buf_margin = USB_BULK_BUFFER_SIZE;
 		usb_bulk_buffer_stats.num_shortfalls = 0;
 		usb_bulk_buffer_stats.longest_shortfall = 0;
 	}
@@ -386,24 +386,24 @@ void rx_mode(void) {
 	baseband_streaming_enable(&sgpio_config);
 
 	while (TRANSCEIVER_MODE_RX == _transceiver_mode) {
-		uint32_t m0_offset = usb_bulk_buffer_stats.m0_count & 0x7fff;
+		uint32_t m0_offset = usb_bulk_buffer_stats.m0_count & USB_BULK_BUFFER_SIZE_MASK;
 		// Set up IN transfer of buffer 0.
-		if (16384 <= m0_offset && 1 == phase) {
+		if (USB_BULK_BUFFER_CHUNK_SIZE <= m0_offset && 1 == phase) {
 			usb_transfer_schedule_block(
 				&usb_endpoint_bulk_in,
-				&usb_bulk_buffer[0x0000],
-				0x4000,
+				&usb_bulk_buffer[0],
+				USB_BULK_BUFFER_CHUNK_SIZE,
 				transceiver_bulk_transfer_complete,
 				NULL
 				);
 			phase = 0;
 		}
 		// Set up IN transfer of buffer 1.
-		if (16384 > m0_offset && 0 == phase) {
+		if (USB_BULK_BUFFER_CHUNK_SIZE > m0_offset && 0 == phase) {
 			usb_transfer_schedule_block(
 				&usb_endpoint_bulk_in,
-				&usb_bulk_buffer[0x4000],
-				0x4000,
+				&usb_bulk_buffer[USB_BULK_BUFFER_CHUNK_SIZE],
+				USB_BULK_BUFFER_CHUNK_SIZE,
 				transceiver_bulk_transfer_complete,
 				NULL
 				);
@@ -418,8 +418,8 @@ void tx_mode(void) {
 	// Set up OUT transfer of buffer 0.
 	usb_transfer_schedule_block(
 		&usb_endpoint_bulk_out,
-		&usb_bulk_buffer[0x0000],
-		0x4000,
+		&usb_bulk_buffer[0],
+		USB_BULK_BUFFER_CHUNK_SIZE,
 		transceiver_bulk_transfer_complete,
 		NULL
 		);
@@ -428,24 +428,24 @@ void tx_mode(void) {
 	baseband_streaming_enable(&sgpio_config);
 
 	while (TRANSCEIVER_MODE_TX == _transceiver_mode) {
-		uint32_t m0_offset = usb_bulk_buffer_stats.m0_count & 0x7fff;
+		uint32_t m0_offset = usb_bulk_buffer_stats.m0_count & USB_BULK_BUFFER_SIZE_MASK;
 		// Set up OUT transfer of buffer 0.
-		if (16384 <= m0_offset && 1 == phase) {
+		if (USB_BULK_BUFFER_CHUNK_SIZE <= m0_offset && 1 == phase) {
 			usb_transfer_schedule_block(
 				&usb_endpoint_bulk_out,
-				&usb_bulk_buffer[0x0000],
-				0x4000,
+				&usb_bulk_buffer[0],
+				USB_BULK_BUFFER_CHUNK_SIZE,
 				transceiver_bulk_transfer_complete,
 				NULL
 				);
 			phase = 0;
 		}
 		// Set up OUT transfer of buffer 1.
-		if (16384 > m0_offset && 0 == phase) {
+		if (USB_BULK_BUFFER_CHUNK_SIZE > m0_offset && 0 == phase) {
 			usb_transfer_schedule_block(
 				&usb_endpoint_bulk_out,
-				&usb_bulk_buffer[0x4000],
-				0x4000,
+				&usb_bulk_buffer[USB_BULK_BUFFER_CHUNK_SIZE],
+				USB_BULK_BUFFER_CHUNK_SIZE,
 				transceiver_bulk_transfer_complete,
 				NULL
 				);

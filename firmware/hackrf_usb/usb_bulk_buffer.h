@@ -26,11 +26,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define USB_BULK_BUFFER_SIZE		0x8000
+#define USB_BULK_BUFFER_SIZE_MASK	0x7fff
+#define USB_BULK_BUFFER_CHUNK_SIZE	0x4000
+
 /* Address of usb_bulk_buffer is set in ldscripts. If you change the name of this
  * variable, it won't be where it needs to be in the processor's address space,
  * unless you also adjust the ldscripts.
  */
-extern uint8_t usb_bulk_buffer[32768];
+extern uint8_t usb_bulk_buffer[USB_BULK_BUFFER_SIZE];
 
 enum usb_bulk_buffer_mode {
 	USB_BULK_BUFFER_MODE_IDLE = 0,

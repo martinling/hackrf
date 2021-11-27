@@ -54,7 +54,7 @@ usb_request_status_t usb_vendor_request_init_sweep(
 	int i;
 	if (stage == USB_TRANSFER_STAGE_SETUP) {
 		num_bytes = (endpoint->setup.index << 16) | endpoint->setup.value;
-		dwell_blocks = num_bytes / 0x4000;
+		dwell_blocks = num_bytes / USB_BULK_BUFFER_CHUNK_SIZE;
 		if(1 > dwell_blocks) {
 			return USB_REQUEST_STATUS_STALL;
 		}
@@ -105,10 +105,10 @@ void sweep_mode(void) {
 
 	while (TRANSCEIVER_MODE_RX_SWEEP == transceiver_mode()) {
 		// Set up IN transfer of buffer 0.
-		uint32_t m0_offset = usb_bulk_buffer_stats.m0_count & 0x7fff;
+		uint32_t m0_offset = usb_bulk_buffer_stats.m0_count & USB_BULK_BUFFER_SIZE_MASK;
 		if ( m0_offset >= 16384 && phase == 1) {
 			transfer = true;
-			buffer = &usb_bulk_buffer[0x0000];
+			buffer = &usb_bulk_buffer[0];
 			phase = 0;
 			blocks_queued++;
 		}
@@ -116,7 +116,7 @@ void sweep_mode(void) {
 		// Set up IN transfer of buffer 1.
 		if ( m0_offset < 16384 && phase == 0) {
 			transfer = true;
-			buffer = &usb_bulk_buffer[0x4000];
+			buffer = &usb_bulk_buffer[USB_BULK_BUFFER_CHUNK_SIZE];
 			phase = 1;
 			blocks_queued++;
 		}
@@ -136,11 +136,11 @@ void sweep_mode(void) {
 				usb_transfer_schedule_block(
 					&usb_endpoint_bulk_in,
 					buffer,
-					0x4000,
+					USB_BULK_BUFFER_CHUNK_SIZE,
 					sweep_bulk_transfer_complete, NULL
 				);
 			} else {
-				usb_bulk_buffer_stats.m4_count += 0x4000;
+				usb_bulk_buffer_stats.m4_count += USB_BULK_BUFFER_CHUNK_SIZE;
 			}
 
 			transfer = false;
