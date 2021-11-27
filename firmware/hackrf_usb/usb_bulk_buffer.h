@@ -29,6 +29,7 @@
 #define USB_BULK_BUFFER_SIZE		0x8000
 #define USB_BULK_BUFFER_SIZE_MASK	0x7fff
 #define USB_BULK_BUFFER_CHUNK_SIZE	0x4000
+#define USB_BULK_BUFFER_NUM_CHUNKS	(USB_BULK_BUFFER_SIZE / USB_BULK_BUFFER_CHUNK_SIZE)
 
 /* Address of usb_bulk_buffer is set in ldscripts. If you change the name of this
  * variable, it won't be where it needs to be in the processor's address space,

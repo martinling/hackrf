@@ -381,41 +381,37 @@ void transceiver_bulk_transfer_complete(void *user_data, unsigned int bytes_tran
 }
 
 void rx_mode(void) {
-	unsigned int phase = 1;
+	// Which chunk the M4 last set up to transfer.
+	uint8_t m4_chunk = USB_BULK_BUFFER_NUM_CHUNKS - 1;
 
 	baseband_streaming_enable(&sgpio_config);
 
 	while (TRANSCEIVER_MODE_RX == _transceiver_mode) {
+		// Offset that the M0 is writing to within the buffer.
 		uint32_t m0_offset = usb_bulk_buffer_stats.m0_count & USB_BULK_BUFFER_SIZE_MASK;
-		// Set up IN transfer of buffer 0.
-		if (USB_BULK_BUFFER_CHUNK_SIZE <= m0_offset && 1 == phase) {
+		// Chunk index that the M0 is currently writing.
+		uint8_t m0_chunk = m0_offset / USB_BULK_BUFFER_CHUNK_SIZE;
+		// Chunk index the M4 will transfer next.
+		uint8_t m4_next_chunk = (m4_chunk + 1) % USB_BULK_BUFFER_NUM_CHUNKS;
+		// If it's safe to set up the transfer of the next chunk, do so.
+		if (m4_next_chunk != m0_chunk) {
 			usb_transfer_schedule_block(
 				&usb_endpoint_bulk_in,
-				&usb_bulk_buffer[0],
+				&usb_bulk_buffer[m4_next_chunk * USB_BULK_BUFFER_CHUNK_SIZE],
 				USB_BULK_BUFFER_CHUNK_SIZE,
 				transceiver_bulk_transfer_complete,
 				NULL
 				);
-			phase = 0;
-		}
-		// Set up IN transfer of buffer 1.
-		if (USB_BULK_BUFFER_CHUNK_SIZE > m0_offset && 0 == phase) {
-			usb_transfer_schedule_block(
-				&usb_endpoint_bulk_in,
-				&usb_bulk_buffer[USB_BULK_BUFFER_CHUNK_SIZE],
-				USB_BULK_BUFFER_CHUNK_SIZE,
-				transceiver_bulk_transfer_complete,
-				NULL
-				);
-			phase = 1;
+			m4_chunk = m4_next_chunk;
 		}
 	}
 }
 
 void tx_mode(void) {
-	unsigned int phase = 0;
+	// Which chunk the M4 last set up to transfer.
+	uint8_t m4_chunk = 0;
 
-	// Set up OUT transfer of buffer 0.
+	// Set up OUT transfer of first buffer chunk.
 	usb_transfer_schedule_block(
 		&usb_endpoint_bulk_out,
 		&usb_bulk_buffer[0],
@@ -428,28 +424,22 @@ void tx_mode(void) {
 	baseband_streaming_enable(&sgpio_config);
 
 	while (TRANSCEIVER_MODE_TX == _transceiver_mode) {
+		// Offset that the M0 is reading at within the buffer.
 		uint32_t m0_offset = usb_bulk_buffer_stats.m0_count & USB_BULK_BUFFER_SIZE_MASK;
-		// Set up OUT transfer of buffer 0.
-		if (USB_BULK_BUFFER_CHUNK_SIZE <= m0_offset && 1 == phase) {
+		// Chunk index that the M0 is currently reading.
+		uint8_t m0_chunk = m0_offset / USB_BULK_BUFFER_CHUNK_SIZE;
+		// Chunk index the M4 will transfer next.
+		uint8_t m4_next_chunk = (m4_chunk + 1) % USB_BULK_BUFFER_NUM_CHUNKS;
+		// If it's safe to set up the transfer of the next chunk, do so.
+		if (m4_next_chunk != m0_chunk) {
 			usb_transfer_schedule_block(
 				&usb_endpoint_bulk_out,
-				&usb_bulk_buffer[0],
+				&usb_bulk_buffer[m4_next_chunk * USB_BULK_BUFFER_CHUNK_SIZE],
 				USB_BULK_BUFFER_CHUNK_SIZE,
 				transceiver_bulk_transfer_complete,
 				NULL
 				);
-			phase = 0;
-		}
-		// Set up OUT transfer of buffer 1.
-		if (USB_BULK_BUFFER_CHUNK_SIZE > m0_offset && 0 == phase) {
-			usb_transfer_schedule_block(
-				&usb_endpoint_bulk_out,
-				&usb_bulk_buffer[USB_BULK_BUFFER_CHUNK_SIZE],
-				USB_BULK_BUFFER_CHUNK_SIZE,
-				transceiver_bulk_transfer_complete,
-				NULL
-				);
-			phase = 1;
+			m4_chunk = m4_next_chunk;
 		}
 	}
 }
