@@ -42,9 +42,9 @@
 .equ INT_STATUS,                           0x2C
 
 // Buffer that we're funneling data to/from.
-.equ TARGET_DATA_BUFFER,                   0x20008000
-.equ BUF_SIZE,                             0x8000
-.equ BUF_SIZE_MASK,                        0x7fff
+.equ TARGET_DATA_BUFFER,                   0x20000000
+.equ BUF_SIZE,                             0x10000
+.equ BUF_SIZE_MASK,                        0xffff
 
 // Base address of the buffer statistics.
 .ifdef RAD10
