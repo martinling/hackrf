@@ -1376,12 +1376,12 @@ int ADDCALL hackrf_set_freq_explicit(
 	uint8_t length;
 	int result;
 
-	if (if_freq_hz < 2150000000 || if_freq_hz > 2750000000) {
+	if (if_freq_hz < 2150000000ULL || if_freq_hz > 2750000000ULL) {
 		return HACKRF_ERROR_INVALID_PARAM;
 	}
 
 	if ((path != RF_PATH_FILTER_BYPASS) &&
-	    (lo_freq_hz < 84375000 || lo_freq_hz > 5400000000)) {
+	    (lo_freq_hz < 84375000ULL || lo_freq_hz > 5400000000ULL)) {
 		return HACKRF_ERROR_INVALID_PARAM;
 	}
 
