@@ -324,12 +324,15 @@ char* u64toa(uint64_t val, t_u64toa* str)
 static volatile bool do_exit = false;
 static volatile bool interrupted = false;
 static volatile bool tx_complete = false;
+static volatile bool flush_complete = false;
 #ifdef _WIN32
 static HANDLE interrupt_handle;
 #endif
 
 FILE* file = NULL;
+volatile uint32_t preload_transfers = 0;
 volatile uint32_t byte_count = 0;
+volatile uint32_t submitted_byte_count = 0;
 
 bool signalsource = false;
 uint32_t amplitude = 0;
@@ -486,6 +489,12 @@ int tx_callback(hackrf_transfer* transfer)
 		return -1;
 	}
 
+	/* The first few TX callbacks get empty transfer buffers. */
+	if (preload_transfers > 0) {
+		transfer->valid_length = 0;
+		preload_transfers--;
+	}
+
 	/* Accumulate power (magnitude squared). */
 	uint64_t sum = 0;
 	for (i = 0; i < transfer->valid_length; i++) {
@@ -525,6 +534,9 @@ int tx_callback(hackrf_transfer* transfer)
 	}
 	transfer->valid_length = bytes_read;
 
+	/* Keep track of the number of bytes submitted. */
+	submitted_byte_count += bytes_read;
+
 	/* If the sample limit has been reached, this is the last data. */
 	if (limit_num_samples && (bytes_to_xfer == 0)) {
 		tx_complete = true;
@@ -545,12 +557,14 @@ int tx_callback(hackrf_transfer* transfer)
 	/* If we get to here, we need to repeat the file until we fill the buffer. */
 	while (bytes_read < bytes_to_read) {
 		rewind(file);
-		bytes_read +=
+		size_t extra_bytes_read =
 			fread(transfer->buffer + bytes_read,
 			      1,
 			      bytes_to_read - bytes_read,
 			      file);
-		transfer->valid_length = bytes_read;
+		bytes_read += extra_bytes_read;
+		transfer->valid_length += extra_bytes_read;
+		submitted_byte_count += extra_bytes_read;
 	}
 
 	/* Then return normally. */
@@ -559,6 +573,7 @@ int tx_callback(hackrf_transfer* transfer)
 
 static void flush_callback(void* flush_ctx)
 {
+	flush_complete = true;
 	stop_main_loop();
 }
 
@@ -694,7 +709,6 @@ int main(int argc, char** argv)
 	unsigned int lna_gain = 8, vga_gain = 20, txvga_gain = 0;
 	hackrf_m0_state state;
 	stats_t stats = {0, 0};
-	static int32_t preload_bytes = 0;
 
 	while ((opt = getopt(argc, argv, "Hwr:t:f:i:o:m:a:p:s:Fn:b:l:g:x:c:d:C:RS:Bh?")) !=
 	       EOF) {
@@ -1253,8 +1267,7 @@ int main(int argc, char** argv)
 		result |= hackrf_set_lna_gain(device, lna_gain);
 		result |= hackrf_start_rx(device, rx_callback, NULL);
 	} else {
-		preload_bytes = hackrf_get_transfer_queue_depth(device) *
-			hackrf_get_transfer_buffer_size(device);
+		preload_transfers = hackrf_get_transfer_queue_depth(device);
 		result = hackrf_set_txvga_gain(device, txvga_gain);
 		result |= hackrf_enable_tx_flush(device, flush_callback, NULL);
 		result |= hackrf_start_tx(device, tx_callback, NULL);
@@ -1336,21 +1349,10 @@ int main(int argc, char** argv)
 			byte_count = 0;
 			stream_power = 0;
 
-			/*
-			 * The TX callback is called to preload the USB
-			 * transfer buffers at the start of TX. This results in
-			 * invalid statistics collected about the empty buffers
-			 * before any USB transfer is completed. We skip these
-			 * statistics and do not report them to the user.
-			 */
-			if (preload_bytes > 0) {
-				if (preload_bytes > byte_count_now) {
-					preload_bytes -= byte_count_now;
-					byte_count_now = 0;
-				} else {
-					byte_count_now -= preload_bytes;
-					preload_bytes = 0;
-				}
+			if (flush_complete) {
+				byte_count_now = submitted_byte_count;
+			} else {
+				submitted_byte_count = 0;
 			}
 
 			time_difference = TimevalDiff(&time_now, &time_start);
