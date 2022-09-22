@@ -513,8 +513,8 @@ int tx_callback(hackrf_transfer* transfer)
 		/* Read samples from file. */
 		bytes_read = fread(transfer->buffer, 1, bytes_to_read, file);
 
-		/* If no more bytes, error or file empty, treat as end. */
-		if (bytes_read == 0) {
+		/* On an error, treat as end. */
+		if (ferror(file)) {
 			tx_complete = true;
 			return 0;
 		}
