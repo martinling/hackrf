@@ -1788,7 +1788,7 @@ static void LIBUSB_CALL
 hackrf_libusb_transfer_callback(struct libusb_transfer* usb_transfer)
 {
 	hackrf_device* device = (hackrf_device*) usb_transfer->user_data;
-	bool success, resubmit;
+	bool success, resubmit = false;
 	int result;
 
 	hackrf_transfer transfer = {
