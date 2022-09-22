@@ -42,9 +42,8 @@ Welcome to HackRF's documentation!
    enclosure_options   
    hackrfs_buttons
    external_clock_interface
-   clocking
    expansion_interface
-   multiple_device_hardware_synch
+   hardware_triggering
    rf_shield_installation
 
 .. toctree::
