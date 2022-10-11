@@ -717,6 +717,21 @@ static int hackrf_open_setup(libusb_device_handle* usb_device, hackrf_device** d
 		return HACKRF_ERROR_LIBUSB;
 	}
 
+#if defined(LIBUSB_API_VERSION) && LIBUSB_API_VERSION >= 0x0100010A
+	result = libusb_set_option(
+		g_libusb_context,
+		LIBUSB_OPTION_WINUSB_RAW_IO,
+		usb_device,
+		(int) RX_ENDPOINT_ADDRESS,
+		(int) 1,
+		(int*) NULL);
+	if (result != LIBUSB_SUCCESS && result != LIBUSB_ERROR_NOT_SUPPORTED) {
+		last_libusb_error = result;
+		libusb_close(usb_device);
+		return HACKRF_ERROR_LIBUSB;
+	}
+#endif
+
 	lib_device = NULL;
 	lib_device = (hackrf_device*) calloc(1, sizeof(*lib_device));
 	if (lib_device == NULL) {
