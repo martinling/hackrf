@@ -23,6 +23,8 @@
 #ifndef __MIXER_H
 #define __MIXER_H
 
+#include <stdbool.h>
+
 #include "fixed_point.h"
 
 #if defined(JAWBREAKER) || defined(HACKRF_ONE) || defined(PRALINE)
@@ -38,7 +40,10 @@ extern void mixer_bus_setup(mixer_driver_t* const mixer);
 extern void mixer_setup(mixer_driver_t* const mixer);
 
 /* Set frequency (Hz). */
-extern fp_40_24_t mixer_set_frequency(mixer_driver_t* const mixer, fp_40_24_t lo);
+extern fp_40_24_t mixer_set_frequency(
+	mixer_driver_t* const mixer,
+	fp_40_24_t lo,
+	bool program);
 
 extern void mixer_enable(mixer_driver_t* const mixer);
 extern void mixer_disable(mixer_driver_t* const mixer);

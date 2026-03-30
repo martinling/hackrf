@@ -22,6 +22,7 @@
 #ifndef MAX2871_H
 #define MAX2871_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "fixed_point.h"
@@ -37,7 +38,10 @@ typedef struct {
 } max2871_driver_t;
 
 extern void max2871_setup(max2871_driver_t* const drv);
-extern fp_40_24_t max2871_set_frequency(max2871_driver_t* const drv, fp_40_24_t lo);
+extern fp_40_24_t max2871_set_frequency(
+	max2871_driver_t* const drv,
+	fp_40_24_t lo,
+	bool program);
 extern void max2871_enable(max2871_driver_t* const drv);
 extern void max2871_disable(max2871_driver_t* const drv);
 #endif
