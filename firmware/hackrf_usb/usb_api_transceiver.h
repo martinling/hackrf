@@ -26,7 +26,7 @@
 
 #include <stdint.h>
 
-#include <radio.h>
+#include <transceiver_mode.h>
 #include <usb_type.h>
 #include <usb_request.h>
 
