@@ -504,7 +504,7 @@ static bool radio_update_frequency(radio_t* const radio, uint64_t* bank)
 		new_freq = true;
 	}
 	if ((img_reject != applied_img_reject) && (img_reject != RADIO_UNSET)) {
-		rf_path_set_filter(&rf_path, img_reject);
+		rf_path_set_filter(&rf_path, img_reject, opmode);
 		radio->config[RADIO_BANK_APPLIED][RADIO_IMAGE_REJECT] = img_reject;
 		new_freq = true;
 	}

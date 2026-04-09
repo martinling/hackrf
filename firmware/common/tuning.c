@@ -30,6 +30,7 @@
 #include "mixer.h"
 #include "platform_detect.h"
 #include "sgpio.h"
+#include "transceiver_mode.h"
 #if defined(PRALINE) || defined(HACKRF_ONE)
 	#include "operacake.h"
 #endif

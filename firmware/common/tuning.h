@@ -29,6 +29,7 @@
 
 #include "fixed_point.h"
 #include "rf_path.h"
+#include "transceiver_mode.h"
 #if defined(PRALINE)
 	#include "tune_config.h"
 #endif
