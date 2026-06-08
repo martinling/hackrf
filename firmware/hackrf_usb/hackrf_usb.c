@@ -432,7 +432,7 @@ int main(void)
 	if (board_id != BOARD_ID_RAD1O) {
 		clock_gen_shutdown();
 	}
-	delay_us_at_mhz(10000, 96);
+	delay_ms(10);
 	pins_setup();
 	cpld_jtag_pin_setup();
 	mixer_bus_setup(&mixer);
@@ -494,7 +494,7 @@ int main(void)
 #ifdef IS_NOT_PRALINE
 	if (IS_NOT_PRALINE) {
 		if (!cpld_jtag_sram_load(&jtag_cpld)) {
-			halt_and_flash(6000000);
+			halt_and_flash(1000);
 		}
 	}
 #endif
@@ -506,7 +506,7 @@ int main(void)
 	#else
 		fpga_image_load(&fpga_loader, 0);
 	#endif
-		delay_us_at_mhz(100, 204);
+		delay_us(100);
 		fpga_spi_selftest();
 		fpga_sgpio_selftest();
 	}
