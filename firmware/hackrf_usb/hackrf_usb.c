@@ -70,6 +70,9 @@
 		#include <w25q80bv.h>
 	#endif
 #endif
+#ifdef BITSTREAM_ADDR_FROM_FIRMWARE_INFO
+	#include <firmware_info.h>
+#endif
 
 #include "usb_api_adc.h"
 #include "usb_api_board_info.h"
@@ -271,10 +274,29 @@ static void m0_rom_to_ram(void)
 }
 
 #if defined(IS_PRALINE) && !(defined(DFU_MODE) || defined(RAM_MODE))
-extern uint32_t _binary_fpga_bin_start;
+
+#ifndef BITSTREAM_ADDR_FROM_FIRMWARE_INFO
+	extern uint32_t _binary_fpga_bin_start;
+#endif
+
+void fpga_loader_setup(void);
+void fpga_loader_read(uint32_t addr, uint32_t size, uint8_t* buf);
+
+struct fpga_loader_t fpga_loader = {
+#ifndef BITSTREAM_ADDR_FROM_FIRMWARE_INFO
+	.start_addr = (uint32_t) &_binary_fpga_bin_start,
+#endif
+	.setup = fpga_loader_setup,
+	.read = fpga_loader_read,
+	.in_buffer = lz4_in_buf,
+	.out_buffer = lz4_out_buf,
+};
 
 void fpga_loader_setup(void)
 {
+#ifdef BITSTREAM_ADDR_FROM_FIRMWARE_INFO
+	fpga_loader.start_addr = firmware_info.bitstream_start_addr;
+#endif
 	w25q80bv_setup(&spi_flash);
 }
 
@@ -282,14 +304,6 @@ void fpga_loader_read(uint32_t addr, uint32_t size, uint8_t* buf)
 {
 	w25q80bv_read(&spi_flash, addr, size, buf);
 }
-
-struct fpga_loader_t fpga_loader = {
-	.start_addr = (uint32_t) &_binary_fpga_bin_start,
-	.setup = fpga_loader_setup,
-	.read = fpga_loader_read,
-	.in_buffer = lz4_in_buf,
-	.out_buffer = lz4_out_buf,
-};
 #endif
 
 void radio_changed(const uint32_t changed)

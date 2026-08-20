@@ -29,6 +29,9 @@ struct firmware_info_t {
 	uint16_t dfu_mode;
 	uint32_t supported_platform;
 	char version_string[32];
+#ifdef BITSTREAM_ADDR_FROM_FIRMWARE_INFO
+	uint32_t bitstream_start_addr;
+#endif
 } __attribute__((packed, aligned(1)));
 
 extern const struct firmware_info_t firmware_info;
